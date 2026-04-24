@@ -1,0 +1,214 @@
+<section class="page">
+  <header class="entete">
+    <h1>Etalonnage instruments</h1>
+    <button type="button" class="btn-principal" (click)="chargerDonnees()" [disabled]="chargement()">
+      Rafraichir
+    </button>
+  </header>
+
+  <p class="succes" *ngIf="succes()">{{ succes() }}</p>
+  <p class="erreur" *ngIf="erreur()">{{ erreur() }}</p>
+
+  <section class="bloc">
+    <h2>1. Saisir un instrument de mesure</h2>
+    <form [formGroup]="formulaireInstrument" (ngSubmit)="soumettreInstrument()">
+      <div class="grille">
+        <label>
+          Code *
+          <input type="text" formControlName="instrument_code" placeholder="ex: INST-0001" />
+        </label>
+
+        <label>
+          Libelle *
+          <input type="text" formControlName="designation" placeholder="ex: Multimetre atelier" />
+        </label>
+
+        <label>
+          Code type *
+          <select formControlName="type_code">
+            <option *ngFor="let option of typeOptions" [value]="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+        </label>
+
+        <label>
+          Code sous famille
+          <input type="text" formControlName="sub_family_code" placeholder="ex: ELEC-MULTI" />
+        </label>
+
+        <label>
+          SN
+          <input type="text" formControlName="serial_number" placeholder="ex: SN123456" />
+        </label>
+
+        <label>
+          Marque
+          <input type="text" formControlName="brand" placeholder="ex: Fluke" />
+        </label>
+
+        <label>
+          Affectation
+          <input type="text" formControlName="affectation" placeholder="ex: LIGNE-TEST-1" />
+        </label>
+
+        <label>
+          Frequence etalonnage (mois)
+          <input type="number" min="1" formControlName="calibration_frequency_months" />
+        </label>
+
+        <label class="checkbox">
+          <input type="checkbox" formControlName="is_active" />
+          Instrument actif
+        </label>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="btn-principal" [disabled]="enregistrementInstrument()">
+          {{ enregistrementInstrument() ? 'Enregistrement...' : 'Enregistrer instrument' }}
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <section class="bloc">
+    <h2>2. Enregistrer un etalonnage (dates, etat, statut, PV)</h2>
+    <form [formGroup]="formulaireRecord" (ngSubmit)="soumettreRecord()">
+      <div class="grille">
+        <label>
+          Instrument *
+          <select formControlName="instrument">
+            <option *ngFor="let item of instrumentsOptions()" [ngValue]="item.id">
+              {{ item.label }}
+            </option>
+          </select>
+        </label>
+
+        <label>
+          Date etalonnage *
+          <input type="date" formControlName="calibration_date" />
+        </label>
+
+        <label>
+          Prochaine date prevue *
+          <input type="date" formControlName="next_due_date" />
+        </label>
+
+        <label>
+          Etat etalonnage *
+          <select formControlName="calibration_state">
+            <option *ngFor="let option of etatOptions" [value]="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+        </label>
+
+        <label>
+          Status instrument *
+          <select formControlName="result">
+            <option *ngFor="let option of conformiteOptions" [value]="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+        </label>
+
+        <label>
+          Organisme / fournisseur
+          <input type="text" formControlName="provider_name" placeholder="ex: Laboratoire X" />
+        </label>
+
+        <label class="full">
+          Commentaire
+          <textarea rows="3" formControlName="comment" placeholder="Notes et observations..."></textarea>
+        </label>
+
+        <label class="full">
+          PV etalonnage (PDF)
+          <input type="file" accept="application/pdf" (change)="onPdfSelection($event)" />
+          <small *ngIf="selectedPdfName()">{{ selectedPdfName() }}</small>
+        </label>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="btn-principal" [disabled]="enregistrementRecord()">
+          {{ enregistrementRecord() ? 'Enregistrement...' : 'Enregistrer etalonnage' }}
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <section class="bloc">
+    <h2>Catalogue instruments</h2>
+    <p *ngIf="chargement()">Chargement des instruments...</p>
+
+    <table *ngIf="!chargement() && instruments().length > 0">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Libelle</th>
+          <th>Type</th>
+          <th>Sous-famille</th>
+          <th>SN</th>
+          <th>Marque</th>
+          <th>Affectation</th>
+          <th>Dernier etalonnage</th>
+          <th>Prochain etalonnage</th>
+          <th>Etat etalonnage</th>
+          <th>Status instrument</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let instrument of instruments()">
+          <td>{{ instrument.instrument_code }}</td>
+          <td>{{ instrument.designation }}</td>
+          <td>{{ libelleType(instrument.type_code) }}</td>
+          <td>{{ instrument.sub_family_code || '-' }}</td>
+          <td>{{ instrument.serial_number || '-' }}</td>
+          <td>{{ instrument.brand || '-' }}</td>
+          <td>{{ instrument.affectation || '-' }}</td>
+          <td>{{ instrument.last_calibration_date || '-' }}</td>
+          <td>{{ instrument.next_calibration_date || '-' }}</td>
+          <td>{{ libelleEtat(instrument.calibration_state) }}</td>
+          <td>{{ libelleConformite(instrument.conformity_status) }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p *ngIf="!chargement() && instruments().length === 0">Aucun instrument enregistre.</p>
+  </section>
+
+  <section class="bloc">
+    <h2>Historique des PV d'etalonnage</h2>
+    <p *ngIf="chargement()">Chargement des PV...</p>
+
+    <table *ngIf="!chargement() && records().length > 0">
+      <thead>
+        <tr>
+          <th>Instrument</th>
+          <th>Date etalonnage</th>
+          <th>Prochaine date</th>
+          <th>Etat etalonnage</th>
+          <th>Status instrument</th>
+          <th>PV PDF</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let record of records()">
+          <td>{{ instrumentLabel(record.instrument) }}</td>
+          <td>{{ record.calibration_date }}</td>
+          <td>{{ record.next_due_date }}</td>
+          <td>{{ libelleEtat(record.calibration_state) }}</td>
+          <td>{{ libelleConformite(record.result) }}</td>
+          <td>
+            <a *ngIf="reportUrl(record.report_file) as url; else noReport" [href]="url" target="_blank" rel="noopener">
+              Ouvrir PV
+            </a>
+            <ng-template #noReport>-</ng-template>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p *ngIf="!chargement() && records().length === 0">Aucun PV d'etalonnage enregistre.</p>
+  </section>
+</section>

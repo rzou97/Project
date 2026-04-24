@@ -1,0 +1,38 @@
+<section class="page">
+  <header class="entete">
+    <h1>Failure Cases</h1>
+    <button type="button" (click)="chargerPannes()">Rafraichir</button>
+  </header>
+
+  <p class="erreur" *ngIf="erreur()">{{ erreur() }}</p>
+  <p *ngIf="chargement()">Chargement des pannes...</p>
+
+  <table *ngIf="!chargement() && pannes().length > 0">
+    <thead>
+      <tr>
+        <th>SN</th>
+        <th>Phase</th>
+        <th>Testeur</th>
+        <th>Type Defaut</th>
+        <th>Message</th>
+        <th>Statut</th>
+        <th>Ouverte le</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let panne of pannes()">
+        <td>{{ panne.serial_number }}</td>
+        <td>{{ panne.detected_in_phase || '-' }}</td>
+        <td>{{ panne.detected_on_tester || '-' }}</td>
+        <td>{{ panne.failure_type || '-' }}</td>
+        <td>{{ panne.failure_message || '-' }}</td>
+        <td>{{ panne.failure_status }}</td>
+        <td>{{ panne.opened_at }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p *ngIf="!chargement() && !erreur() && pannes().length === 0">
+    Aucun failure case trouve.
+  </p>
+</section>

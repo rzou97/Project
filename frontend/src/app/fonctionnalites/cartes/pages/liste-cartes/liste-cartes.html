@@ -1,0 +1,36 @@
+<section class="page">
+  <header class="entete">
+    <h1>Cartes</h1>
+    <button type="button" (click)="chargerCartes()">Rafraichir</button>
+  </header>
+
+  <p class="erreur" *ngIf="erreur()">{{ erreur() }}</p>
+  <p *ngIf="chargement()">Chargement des cartes...</p>
+
+  <table *ngIf="!chargement() && cartes().length > 0">
+    <thead>
+      <tr>
+        <th>Serial Number</th>
+        <th>Ref Client</th>
+        <th>Ref Interne</th>
+        <th>Statut</th>
+        <th>First Seen</th>
+        <th>Last Seen</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let carte of cartes()">
+        <td>{{ carte.serial_number }}</td>
+        <td>{{ carte.client_reference || '-' }}</td>
+        <td>{{ carte.internal_reference || '-' }}</td>
+        <td>{{ carte.current_status }}</td>
+        <td>{{ carte.first_seen_at || '-' }}</td>
+        <td>{{ carte.last_seen_at || '-' }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p *ngIf="!chargement() && !erreur() && cartes().length === 0">
+    Aucune carte trouvee.
+  </p>
+</section>

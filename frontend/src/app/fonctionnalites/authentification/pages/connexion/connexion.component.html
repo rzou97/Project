@@ -1,0 +1,166 @@
+<section class="page-auth">
+  <div class="auth-shell">
+    <aside class="brand-panel">
+      <div class="brand-mark">
+        <div class="logo-shell">
+          <img class="brand-logo" src="/altrics-logo.svg" alt="Altrics Tunisie" />
+        </div>
+        <div class="brand-copy">
+          <h1>ALTRICS TechView</h1>
+          <p class="brand-slogan">Anticiper. Piloter. Performer.</p>
+        </div>
+      </div>
+    </aside>
+
+    <section class="auth-panel">
+      <div class="mode-switch" role="tablist" aria-label="Choix mode authentification">
+        <button
+          type="button"
+          [class.active]="mode() === 'connexion'"
+          (click)="basculerMode('connexion')"
+        >
+          Se connecter
+        </button>
+        <button
+          type="button"
+          [class.active]="mode() === 'inscription'"
+          (click)="basculerMode('inscription')"
+        >
+          S inscrire
+        </button>
+      </div>
+
+      <h2>{{ mode() === 'connexion' ? 'Connexion' : 'Inscription' }}</h2>
+
+      <p class="subtitle" *ngIf="mode() === 'connexion'; else inscriptionInfo">
+        Accedez a votre espace.
+      </p>
+      <ng-template #inscriptionInfo>
+        <p class="subtitle">
+          Creez votre compte puis validez votre adresse email.
+        </p>
+      </ng-template>
+
+      <div class="message success" *ngIf="succes()">{{ succes() }}</div>
+      <div class="message error" *ngIf="erreur()">{{ erreur() }}</div>
+
+      <form
+        *ngIf="mode() === 'connexion'; else inscriptionForm"
+        [formGroup]="formulaireConnexion"
+        (ngSubmit)="soumettreConnexion()"
+        novalidate
+      >
+        <div class="field">
+          <label for="login-email">Email</label>
+          <input
+            id="login-email"
+            type="email"
+            formControlName="email"
+            placeholder="votre.email@atems.tn"
+          />
+          <small
+            *ngIf="formulaireConnexion.controls.email.touched && formulaireConnexion.controls.email.invalid"
+          >
+            Email valide obligatoire.
+          </small>
+        </div>
+
+        <div class="field">
+          <label for="login-password">Mot de passe</label>
+          <input
+            id="login-password"
+            type="password"
+            formControlName="password"
+            placeholder="********"
+          />
+          <small
+            *ngIf="formulaireConnexion.controls.password.touched && formulaireConnexion.controls.password.invalid"
+          >
+            Mot de passe obligatoire.
+          </small>
+        </div>
+
+        <button class="submit-btn" type="submit" [disabled]="chargement()">
+          {{ chargement() ? 'Connexion en cours...' : 'Se connecter' }}
+        </button>
+      </form>
+
+      <ng-template #inscriptionForm>
+        <form [formGroup]="formulaireInscription" (ngSubmit)="soumettreInscription()" novalidate>
+          <div class="field-grid">
+            <div class="field">
+              <label for="first-name">Prenom</label>
+              <input
+                id="first-name"
+                type="text"
+                formControlName="first_name"
+                placeholder="Ex: Ahmed"
+              />
+            </div>
+
+            <div class="field">
+              <label for="last-name">Nom</label>
+              <input
+                id="last-name"
+                type="text"
+                formControlName="last_name"
+                placeholder="Ex: Mahjbi"
+              />
+            </div>
+
+            <div class="field">
+              <label for="signup-email">Email professionnel</label>
+              <input
+                id="signup-email"
+                type="email"
+                formControlName="email"
+                placeholder="votre.email@atems.tn"
+              />
+            </div>
+
+            <div class="field">
+              <label for="matricule">Matricule</label>
+              <input
+                id="matricule"
+                type="text"
+                formControlName="matricule"
+                placeholder="Ex: PRM0234"
+              />
+            </div>
+
+            <div class="field">
+              <label for="role">Role</label>
+              <select id="role" formControlName="role">
+                <option *ngFor="let role of roles" [value]="role.value">{{ role.label }}</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="password">Mot de passe</label>
+              <input
+                id="password"
+                type="password"
+                formControlName="password"
+                placeholder="Minimum 8 caracteres"
+              />
+            </div>
+
+            <div class="field field-full">
+              <label for="confirm-password">Confirmation mot de passe</label>
+              <input
+                id="confirm-password"
+                type="password"
+                formControlName="confirm_password"
+                placeholder="Retapez le mot de passe"
+              />
+            </div>
+          </div>
+
+          <button class="submit-btn" type="submit" [disabled]="chargement()">
+            {{ chargement() ? 'Inscription en cours...' : 'S inscrire' }}
+          </button>
+        </form>
+      </ng-template>
+    </section>
+  </div>
+</section>

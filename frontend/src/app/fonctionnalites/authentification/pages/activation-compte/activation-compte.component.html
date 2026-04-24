@@ -1,0 +1,12 @@
+<section class="page-activation">
+  <div class="carte">
+    <img src="/altrics-logo.svg" alt="Altrics logo" />
+    <h1>Activation du compte</h1>
+
+    <p [class.ok]="succes()" [class.ko]="!succes() && !chargement()">
+      {{ message() }}
+    </p>
+
+    <a [routerLink]="routeConnexion">Aller vers la connexion</a>
+  </div>
+</section>

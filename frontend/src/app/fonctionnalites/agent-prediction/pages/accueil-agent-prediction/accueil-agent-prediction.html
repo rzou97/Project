@@ -1,0 +1,63 @@
+<section class="page">
+  <header class="entete">
+    <h1>IA Reparation</h1>
+    <button type="button" (click)="chargerDonnees()">Rafraichir</button>
+  </header>
+
+  <p class="erreur" *ngIf="erreur()">{{ erreur() }}</p>
+  <p *ngIf="chargement()">Chargement des donnees IA...</p>
+
+  <div *ngIf="!chargement()">
+    <h2>Predictions</h2>
+    <table *ngIf="predictions().length > 0; else noPredictions">
+      <thead>
+        <tr>
+          <th>SN Cible</th>
+          <th>Type</th>
+          <th>Cause Predite</th>
+          <th>Action Recommandee</th>
+          <th>Confiance</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let prediction of predictions()">
+          <td>{{ prediction.target_serial_number }}</td>
+          <td>{{ prediction.prediction_type }}</td>
+          <td>{{ prediction.predicted_cause || '-' }}</td>
+          <td>{{ prediction.recommended_action || '-' }}</td>
+          <td>{{ prediction.confidence_score ?? '-' }}</td>
+          <td>{{ prediction.predicted_at }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <ng-template #noPredictions>
+      <p>Aucune prediction disponible.</p>
+    </ng-template>
+
+    <h2>Procedures generees</h2>
+    <table *ngIf="procedures().length > 0; else noProcedures">
+      <thead>
+        <tr>
+          <th>Procedure</th>
+          <th>Type Defaut</th>
+          <th>Signature</th>
+          <th>Success Rate</th>
+          <th>Version</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let procedure of procedures()">
+          <td>{{ procedure.procedure_name }}</td>
+          <td>{{ procedure.failure_type }}</td>
+          <td>{{ procedure.failure_signature }}</td>
+          <td>{{ procedure.success_rate ?? '-' }}</td>
+          <td>{{ procedure.version }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <ng-template #noProcedures>
+      <p>Aucune procedure generee.</p>
+    </ng-template>
+  </div>
+</section>

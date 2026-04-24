@@ -1,0 +1,170 @@
+<section class="page">
+  <header class="entete">
+    <h1>Pieces de rechange</h1>
+    <button type="button" class="btn-principal" (click)="chargerDonnees()" [disabled]="chargement()">
+      Rafraichir
+    </button>
+  </header>
+
+  <p class="succes" *ngIf="succes()">{{ succes() }}</p>
+  <p class="erreur" *ngIf="erreur()">{{ erreur() }}</p>
+
+  <section class="bloc">
+    <h2>Saisir une nouvelle piece</h2>
+
+    <form [formGroup]="formulairePart" (ngSubmit)="soumettrePart()">
+      <div class="grille">
+        <label>
+          Code piece *
+          <input type="text" formControlName="part_code" placeholder="ex: RES-10K-1W" />
+        </label>
+
+        <label>
+          Designation *
+          <input type="text" formControlName="designation" placeholder="ex: Resistance 10k 1W" />
+        </label>
+
+        <label>
+          Fabricant
+          <input type="text" formControlName="manufacturer" placeholder="ex: Vishay" />
+        </label>
+
+        <label>
+          Type affectation
+          <select formControlName="affectation_type">
+            <option *ngFor="let option of affectationTypes" [value]="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+        </label>
+
+        <label>
+          Valeur affectation
+          <input type="text" formControlName="affectation_value" placeholder="ex: TESTER-L1" />
+        </label>
+
+        <label>
+          Unite
+          <input type="text" value="PIECE" readonly />
+        </label>
+
+        <label>
+          Stock minimum *
+          <input type="number" min="0" step="0.01" formControlName="minimum_stock" />
+        </label>
+
+        <label>
+          Image PDR (optionnel)
+          <input type="file" accept="image/*" (change)="onImageSelection($event)" />
+        </label>
+
+        <label class="checkbox">
+          <input type="checkbox" formControlName="is_active" />
+          Piece active
+        </label>
+      </div>
+
+      <div class="image-apercu" *ngIf="imageEnCours() as image">
+        <img [src]="image" alt="Apercu PDR" />
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="btn-principal" [disabled]="enregistrement()">
+          {{ enregistrement() ? 'Enregistrement...' : 'Enregistrer la piece' }}
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <section class="bloc">
+    <div class="entete-catalogue">
+      <h2>Catalogue des pieces</h2>
+      <div class="toggle-vue">
+        <button
+          type="button"
+          [class.actif]="vueCatalogue() === 'cartes'"
+          (click)="changerVue('cartes')"
+        >
+          Vue cartes
+        </button>
+        <button
+          type="button"
+          [class.actif]="vueCatalogue() === 'table'"
+          (click)="changerVue('table')"
+        >
+          Vue table
+        </button>
+      </div>
+    </div>
+
+    <p *ngIf="chargement()">Chargement du catalogue...</p>
+
+    <div class="catalogue-cartes" *ngIf="!chargement() && vueCatalogue() === 'cartes' && catalogueCartes().length > 0">
+      <article class="carte-produit" *ngFor="let item of catalogueCartes()">
+        <img [src]="item.image" [alt]="item.part.designation" />
+        <div class="contenu-carte">
+          <p class="code">{{ item.part.part_code }}</p>
+          <h3>{{ item.part.designation }}</h3>
+          <p class="meta">{{ item.part.manufacturer || 'Fabricant non renseigne' }}</p>
+          <p class="meta">{{ libelleAffectation(item.part) }}</p>
+          <p class="quantite">Qte disponible: {{ item.stockDisponible }}</p>
+        </div>
+      </article>
+    </div>
+
+    <table *ngIf="!chargement() && vueCatalogue() === 'table' && parts().length > 0">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Designation</th>
+          <th>Fabricant</th>
+          <th>Affectation</th>
+          <th>Unite</th>
+          <th>Stock min</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let part of parts()">
+          <td>{{ part.part_code }}</td>
+          <td>{{ part.designation }}</td>
+          <td>{{ part.manufacturer || '-' }}</td>
+          <td>{{ libelleAffectation(part) }}</td>
+          <td>PIECE</td>
+          <td>{{ part.minimum_stock }}</td>
+          <td>{{ part.is_active ? 'ACTIVE' : 'INACTIVE' }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p *ngIf="!chargement() && parts().length === 0">Aucune piece enregistree.</p>
+  </section>
+
+  <section class="bloc">
+    <h2>Etat des stocks</h2>
+    <p *ngIf="chargement()">Chargement des stocks...</p>
+
+    <table *ngIf="!chargement() && stocks().length > 0">
+      <thead>
+        <tr>
+          <th>Piece</th>
+          <th>Qte courante</th>
+          <th>Qte reservee</th>
+          <th>Qte disponible</th>
+          <th>Dernier inventaire</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let stock of stocks()">
+          <td>{{ libellePart(stock.part) }}</td>
+          <td>{{ stock.current_quantity }}</td>
+          <td>{{ stock.reserved_quantity }}</td>
+          <td>{{ stock.available_quantity }}</td>
+          <td>{{ stock.last_inventory_at || '-' }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p *ngIf="!chargement() && stocks().length === 0">Aucun stock disponible pour le moment.</p>
+  </section>
+</section>

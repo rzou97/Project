@@ -1,0 +1,70 @@
+<section class="accueil">
+  <div class="entete-page">
+    <h1>Accueil</h1>
+    <a class="btn-grafana" href="http://localhost/grafana/" target="_blank" rel="noopener">
+      Ouvrir Grafana
+    </a>
+  </div>
+
+  <div *ngIf="erreur()" class="erreur">
+    {{ erreur() }}
+  </div>
+
+  <div class="bloc">
+    <h2>FPY instantané des testeurs</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Testeur</th>
+          <th>Date</th>
+          <th>SN testés</th>
+          <th>SN OK</th>
+          <th>FPY</th>
+          <th>Dernier test</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of fpyTesteurs()">
+          <td>{{ item.tester_id }}</td>
+          <td>{{ item.day_date }}</td>
+          <td>{{ item.unique_sn_tested }}</td>
+          <td>{{ item.unique_sn_passed }}</td>
+          <td>{{ item.fpy_instant }} %</td>
+          <td>{{ item.last_test_at || '-' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="bloc">
+    <h2>Statut actuel des testeurs</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Testeur</th>
+          <th>Opérateur</th>
+          <th>Référence interne</th>
+          <th>Dernier PV</th>
+          <th>Fail rate</th>
+          <th>Statut</th>
+          <th>Alertes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of statutsTesteurs()">
+          <td>{{ item.tester_id }}</td>
+          <td>{{ item.operator_name || '-' }}</td>
+          <td>{{ item.internal_reference || '-' }}</td>
+          <td>{{ item.last_test_at || '-' }}</td>
+          <td>{{ item.current_fail_rate }} %</td>
+          <td>
+            <span class="badge" [attr.data-statut]="item.current_status">
+              {{ libelleStatut(item.current_status) }}
+            </span>
+          </td>
+          <td>{{ item.alert_status }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>

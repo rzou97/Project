@@ -1,0 +1,20 @@
+<aside class="sidebar">
+  <div class="brand-block">
+    <div class="logo-shell">
+      <img class="brand-logo" src="/altrics-logo.svg" alt="Altrics Tunisie" />
+    </div>
+    <h1 class="app-name">ALTRICS TechView</h1>
+    <p class="app-slogan">Anticiper. Piloter. Performer.</p>
+  </div>
+
+  <nav>
+    <a
+      *ngFor="let item of menus"
+      [routerLink]="item.route"
+      routerLinkActive="actif"
+      [routerLinkActiveOptions]="{ exact: item.route === '/' }"
+    >
+      {{ item.label }}
+    </a>
+  </nav>
+</aside>

@@ -1,0 +1,35 @@
+<header class="header">
+  <div class="zone-gauche">
+    <img class="logo-inline" src="/altrics-logo.svg" alt="Altrics Tunisie logo" />
+
+    <div class="zone-recherche">
+      <input
+        type="text"
+        [value]="query()"
+        (input)="onQueryChange($event)"
+        (focus)="onQueryFocus()"
+        (blur)="onQueryBlur()"
+        (keydown)="onQueryEnter($event)"
+        placeholder="Rechercher un module..."
+      />
+
+      <div class="suggestions" *ngIf="afficherSuggestions() && resultatsRecherche().length > 0">
+        <button type="button" *ngFor="let item of resultatsRecherche()" (mousedown)="allerVers(item.route)">
+          {{ item.label }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="zone-utilisateur" *ngIf="sessionService.utilisateur() as user">
+    <div class="profil-card">
+      <span class="avatar">{{ initials(displayName(user)) }}</span>
+      <div class="infos">
+        <strong>{{ displayName(user) }}</strong>
+        <small>{{ user.role }}</small>
+      </div>
+    </div>
+
+    <button type="button" class="btn-logout" (click)="seDeconnecter()">Deconnexion</button>
+  </div>
+</header>

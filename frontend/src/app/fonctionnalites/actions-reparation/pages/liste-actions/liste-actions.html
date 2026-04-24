@@ -1,0 +1,65 @@
+<section class="page">
+  <header class="entete">
+    <h1>Reparation</h1>
+    <button type="button" (click)="chargerDonnees()">Rafraichir</button>
+  </header>
+
+  <p class="erreur" *ngIf="erreur()">{{ erreur() }}</p>
+  <p *ngIf="chargement()">Chargement des tickets et actions...</p>
+
+  <div *ngIf="!chargement()">
+    <h2>Repair Tickets</h2>
+    <table *ngIf="tickets().length > 0; else noTickets">
+      <thead>
+        <tr>
+          <th>Ticket</th>
+          <th>Statut</th>
+          <th>Cycle</th>
+          <th>Ouvert le</th>
+          <th>Ferme le</th>
+          <th>Efficacite</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let ticket of tickets()">
+          <td>{{ ticket.ticket_code }}</td>
+          <td>{{ ticket.ticket_status }}</td>
+          <td>{{ ticket.cycle_number }}</td>
+          <td>{{ ticket.opened_at }}</td>
+          <td>{{ ticket.closed_at || '-' }}</td>
+          <td>{{ ticket.repair_effectiveness ?? '-' }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <ng-template #noTickets>
+      <p>Aucun ticket de reparation.</p>
+    </ng-template>
+
+    <h2>Repair Actions</h2>
+    <table *ngIf="actions().length > 0; else noActions">
+      <thead>
+        <tr>
+          <th>Type Defaut</th>
+          <th>Defaut Observe</th>
+          <th>Cause Detectee</th>
+          <th>Action</th>
+          <th>Progression</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let action of actions()">
+          <td>{{ action.defect_type || '-' }}</td>
+          <td>{{ action.observed_defect || '-' }}</td>
+          <td>{{ action.detected_cause || '-' }}</td>
+          <td>{{ action.action_taken || '-' }}</td>
+          <td>{{ action.action_progress || '-' }}</td>
+          <td>{{ action.performed_at || '-' }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <ng-template #noActions>
+      <p>Aucune action de reparation.</p>
+    </ng-template>
+  </div>
+</section>

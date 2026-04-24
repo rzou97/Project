@@ -1,0 +1,238 @@
+.page-auth {
+  min-height: 100vh;
+  padding: 28px;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 5% 5%, rgba(15, 76, 129, 0.08), transparent 32%),
+    radial-gradient(circle at 95% 0%, rgba(255, 111, 0, 0.12), transparent 30%),
+    linear-gradient(180deg, #d6dae0, #e8e5df);
+}
+
+.auth-shell {
+  width: min(1080px, 100%);
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  background: #f8f9fb;
+  border-radius: 22px;
+  overflow: hidden;
+  border: 1px solid #c9d1dd;
+  box-shadow: 0 20px 50px rgba(19, 31, 53, 0.16);
+}
+
+.brand-panel {
+  padding: 36px 30px;
+  background:
+    linear-gradient(150deg, rgba(9, 48, 82, 0.96), rgba(18, 78, 128, 0.93)),
+    radial-gradient(circle at top right, rgba(241, 114, 33, 0.35), transparent 55%);
+  color: #f5f7fa;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.brand-mark {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.logo-shell {
+  width: fit-content;
+  background: #ffffff;
+  border: 1px solid rgba(195, 212, 237, 0.86);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 10px 22px rgba(3, 14, 35, 0.24);
+  border-radius: 14px;
+  padding: 12px 16px;
+}
+
+.brand-logo {
+  width: 224px;
+  height: 82px;
+  object-fit: contain;
+  display: block;
+}
+
+.brand-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.brand-panel h1 {
+  margin: 0;
+  font-size: 2.12rem;
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+  color: #f7fbff;
+}
+
+.brand-slogan {
+  margin: 0;
+  color: #ffcfac;
+  font-size: 1.02rem;
+  font-weight: 600;
+}
+
+.auth-panel {
+  padding: 34px 36px;
+  display: flex;
+  flex-direction: column;
+}
+
+.mode-switch {
+  display: inline-flex;
+  gap: 10px;
+  background: #e9edf5;
+  padding: 6px;
+  border-radius: 12px;
+  width: fit-content;
+  margin-bottom: 18px;
+}
+
+.mode-switch button {
+  border: 0;
+  min-width: 132px;
+  padding: 10px 16px;
+  border-radius: 9px;
+  background: transparent;
+  color: #243e63;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.mode-switch button.active {
+  background: linear-gradient(130deg, #125ca0, #0f4f89);
+  color: #fff;
+  box-shadow: 0 8px 16px rgba(8, 64, 111, 0.24);
+}
+
+.auth-panel h2 {
+  margin: 0;
+  font-size: 1.7rem;
+  color: #112544;
+}
+
+.subtitle {
+  margin: 8px 0 18px;
+  color: #596b83;
+}
+
+.message {
+  border-radius: 12px;
+  padding: 11px 14px;
+  margin-bottom: 14px;
+  font-size: 0.95rem;
+}
+
+.message.success {
+  border: 1px solid #9dd9b3;
+  background: #ebfff3;
+  color: #15663b;
+}
+
+.message.error {
+  border: 1px solid #e7b2b2;
+  background: #fff1f1;
+  color: #a92727;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.field label {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #153154;
+}
+
+.field input,
+.field select {
+  height: 44px;
+  border: 1px solid #c5cfdc;
+  border-radius: 10px;
+  padding: 0 12px;
+  outline: none;
+  background: #fff;
+  color: #1a2740;
+}
+
+.field input:focus,
+.field select:focus {
+  border-color: #1c67b0;
+  box-shadow: 0 0 0 3px rgba(28, 103, 176, 0.14);
+}
+
+.field small {
+  color: #b42525;
+  font-size: 0.82rem;
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.field-full {
+  grid-column: 1 / -1;
+}
+
+.submit-btn {
+  margin-top: 2px;
+  border: 0;
+  height: 46px;
+  border-radius: 11px;
+  background: linear-gradient(130deg, #f67422, #ed4e1b);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.18s ease, filter 0.18s ease;
+}
+
+.submit-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+}
+
+.submit-btn:disabled {
+  cursor: wait;
+  filter: grayscale(25%);
+  opacity: 0.75;
+}
+
+@media (max-width: 960px) {
+  .page-auth {
+    padding: 16px;
+  }
+
+  .auth-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .brand-panel {
+    align-items: center;
+    text-align: center;
+    padding: 24px 20px;
+  }
+
+  .auth-panel {
+    padding: 24px 20px;
+  }
+
+  .field-grid {
+    grid-template-columns: 1fr;
+  }
+}
