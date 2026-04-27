@@ -1,1 +1,117 @@
-<p>detail-carte works!</p>
+<section class="module-page">
+  <header class="module-header">
+    <div class="module-title">
+      <h1>Mouvements de test</h1>
+      <p>Historique detaille des passages de test pour le SN {{ serialNumber }}.</p>
+    </div>
+    <a class="link-serial" [routerLink]="['/cartes']">Retour aux cartes</a>
+  </header>
+
+  <p class="erreur" *ngIf="erreur()">{{ erreur() }}</p>
+
+  <section class="section-card" *ngIf="!chargementCarte() && carte() as carte">
+    <h2>Fiche carte</h2>
+    <div class="overview-grid">
+      <div class="overview-card">
+        <span class="overview-label">Serial number</span>
+        <strong class="overview-value">{{ carte.serial_number }}</strong>
+      </div>
+      <div class="overview-card">
+        <span class="overview-label">Reference client</span>
+        <strong class="overview-value">{{ carte.client_reference || '-' }}</strong>
+      </div>
+      <div class="overview-card">
+        <span class="overview-label">Reference interne</span>
+        <strong class="overview-value">{{ carte.internal_reference || '-' }}</strong>
+      </div>
+      <div class="overview-card">
+        <span class="overview-label">Statut actuel</span>
+        <span class="status-badge" [attr.data-status]="carte.current_status">{{ carte.current_status }}</span>
+      </div>
+      <div class="overview-card">
+        <span class="overview-label">First seen</span>
+        <strong class="overview-value">{{ carte.first_seen_at ? (carte.first_seen_at | date: 'yyyy-MM-dd HH:mm:ss') : '-' }}</strong>
+      </div>
+      <div class="overview-card">
+        <span class="overview-label">Last seen</span>
+        <strong class="overview-value">{{ carte.last_seen_at ? (carte.last_seen_at | date: 'yyyy-MM-dd HH:mm:ss') : '-' }}</strong>
+      </div>
+    </div>
+  </section>
+
+  <section class="toolbar-panel">
+    <div class="filter-grid">
+      <div class="filter-field">
+        <label for="movement-phase">Phase de test</label>
+        <select id="movement-phase" name="movement-phase" [(ngModel)]="filtres.test_phase">
+          <option value="">Toutes les phases</option>
+          <option *ngFor="let phase of phases" [value]="phase">{{ phase }}</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="movement-result">Resultat</label>
+        <select id="movement-result" name="movement-result" [(ngModel)]="filtres.result">
+          <option value="">Tous les resultats</option>
+          <option *ngFor="let result of resultats" [value]="result">{{ result }}</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="movement-tester">Testeur</label>
+        <input id="movement-tester" name="movement-tester" type="text" [(ngModel)]="filtres.tester_id" placeholder="Ex: BT_DEVERMINAGE_V3_IES_V4" />
+      </div>
+      <div class="filter-field">
+        <label for="movement-page-size">Lignes par page</label>
+        <select id="movement-page-size" name="movement-page-size" [(ngModel)]="filtres.page_size" (change)="changerTaillePage()">
+          <option *ngFor="let option of pageSizeOptions" [ngValue]="option">{{ option }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="filter-actions">
+      <button type="button" (click)="appliquerFiltres()">Appliquer</button>
+      <button type="button" class="button-muted" (click)="reinitialiserFiltres()">Reinitialiser</button>
+    </div>
+  </section>
+
+  <p *ngIf="chargementMouvements()">Chargement des mouvements de test...</p>
+
+  <div class="results-meta" *ngIf="!chargementMouvements()">
+    <p>{{ totalMouvements() }} test(s) trouve(s) • Affichage {{ debutResultats() }}-{{ finResultats() }}</p>
+    <div class="pagination-controls">
+      <button type="button" class="button-muted" (click)="pagePrecedente()" [disabled]="pageCourante === 1">Precedent</button>
+      <span>Page {{ pageCourante }} / {{ totalPages() }}</span>
+      <button type="button" class="button-muted" (click)="pageSuivante()" [disabled]="pageCourante >= totalPages()">Suivant</button>
+    </div>
+  </div>
+
+  <div class="table-shell" *ngIf="!chargementMouvements() && mouvements().length > 0">
+    <table>
+      <thead>
+        <tr>
+          <th>Date test</th>
+          <th>Phase</th>
+          <th>Resultat</th>
+          <th>Testeur</th>
+          <th>Operateur</th>
+          <th>Type defaut</th>
+          <th>Message</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let mouvement of mouvements()">
+          <td>{{ mouvement.tested_at | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
+          <td>{{ mouvement.test_phase || '-' }}</td>
+          <td><span class="status-badge" [attr.data-status]="mouvement.result">{{ mouvement.result }}</span></td>
+          <td>{{ mouvement.tester_id || '-' }}</td>
+          <td>{{ mouvement.operator_name || '-' }}</td>
+          <td>{{ mouvement.failure_type || '-' }}</td>
+          <td>{{ mouvement.failure_message || '-' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="empty-state" *ngIf="!chargementMouvements() && !erreur() && mouvements().length === 0">
+    Aucun mouvement de test ne correspond aux filtres saisis.
+  </p>
+</section>

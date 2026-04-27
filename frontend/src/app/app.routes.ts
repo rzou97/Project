@@ -30,6 +30,13 @@ export const routes: Routes = [
       },
 
       {
+        path: `${ROUTE_PATHS.cartes}/:serialNumber`,
+        loadComponent: () =>
+          import('./fonctionnalites/cartes/pages/detail-carte/detail-carte')
+            .then(m => m.DetailCarte),
+      },
+
+      {
         path: ROUTE_PATHS.cartes,
         loadComponent: () =>
           import('./fonctionnalites/cartes/pages/liste-cartes/liste-cartes')

@@ -1,5 +1,8 @@
 export interface TicketReparation {
   id: number;
+  serial_number: string;
+  client_reference: string | null;
+  internal_reference: string | null;
   ticket_code: string;
   ticket_status: string;
   cycle_number: number;
@@ -10,6 +13,8 @@ export interface TicketReparation {
 
 export interface ActionReparation {
   id: number;
+  ticket_code?: string | null;
+  serial_number?: string | null;
   defect_type: string | null;
   observed_defect: string | null;
   detected_cause: string | null;
@@ -17,6 +22,7 @@ export interface ActionReparation {
   action_progress: string | null;
   performed_at: string | null;
   repair_ticket?: number;
+  technician_matricule?: string | null;
 }
 
 export interface RepairHistory {

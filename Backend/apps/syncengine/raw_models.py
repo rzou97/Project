@@ -18,4 +18,4 @@ class RawTestEventEnriched(models.Model):
 
     class Meta:
         managed = False
-        db_table = "test_events_base_enriched"
+        db_table = "public.v3_test_events_enriched"

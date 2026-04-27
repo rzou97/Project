@@ -1,65 +1,176 @@
-<section class="page">
-  <header class="entete">
-    <h1>Reparation</h1>
+<section class="module-page">
+  <header class="module-header">
+    <div class="module-title">
+      <h1>Reparation</h1>
+      <p>Affinez les tickets et les actions par SN, reference interne, code ticket, statut et progression.</p>
+    </div>
     <button type="button" (click)="chargerDonnees()">Rafraichir</button>
   </header>
 
   <p class="erreur" *ngIf="erreur()">{{ erreur() }}</p>
-  <p *ngIf="chargement()">Chargement des tickets et actions...</p>
-
-  <div *ngIf="!chargement()">
+  <section class="section-card">
     <h2>Repair Tickets</h2>
-    <table *ngIf="tickets().length > 0; else noTickets">
-      <thead>
-        <tr>
-          <th>Ticket</th>
-          <th>Statut</th>
-          <th>Cycle</th>
-          <th>Ouvert le</th>
-          <th>Ferme le</th>
-          <th>Efficacite</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let ticket of tickets()">
-          <td>{{ ticket.ticket_code }}</td>
-          <td>{{ ticket.ticket_status }}</td>
-          <td>{{ ticket.cycle_number }}</td>
-          <td>{{ ticket.opened_at }}</td>
-          <td>{{ ticket.closed_at || '-' }}</td>
-          <td>{{ ticket.repair_effectiveness ?? '-' }}</td>
-        </tr>
-      </tbody>
-    </table>
-    <ng-template #noTickets>
-      <p>Aucun ticket de reparation.</p>
-    </ng-template>
 
-    <h2>Repair Actions</h2>
-    <table *ngIf="actions().length > 0; else noActions">
-      <thead>
-        <tr>
-          <th>Type Defaut</th>
-          <th>Defaut Observe</th>
-          <th>Cause Detectee</th>
-          <th>Action</th>
-          <th>Progression</th>
-          <th>Date</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let action of actions()">
-          <td>{{ action.defect_type || '-' }}</td>
-          <td>{{ action.observed_defect || '-' }}</td>
-          <td>{{ action.detected_cause || '-' }}</td>
-          <td>{{ action.action_taken || '-' }}</td>
-          <td>{{ action.action_progress || '-' }}</td>
-          <td>{{ action.performed_at || '-' }}</td>
-        </tr>
-      </tbody>
-    </table>
-    <ng-template #noActions>
-      <p>Aucune action de reparation.</p>
+    <section class="toolbar-panel">
+      <div class="filter-grid">
+        <div class="filter-field">
+          <label for="ticket-sn">Serial number</label>
+          <input id="ticket-sn" name="ticket-sn" type="text" [(ngModel)]="filtresTickets.serial_number" placeholder="Ex: 07685A1B5ZY18" />
+        </div>
+        <div class="filter-field">
+          <label for="ticket-internal-ref">Reference interne</label>
+          <input id="ticket-internal-ref" name="ticket-internal-ref" type="text" [(ngModel)]="filtresTickets.internal_reference" placeholder="Ex: IE1664L01" />
+        </div>
+        <div class="filter-field">
+          <label for="ticket-code">Code ticket</label>
+          <input id="ticket-code" name="ticket-code" type="text" [(ngModel)]="filtresTickets.ticket_code" placeholder="Ex: RT-07685..." />
+        </div>
+        <div class="filter-field">
+          <label for="ticket-status">Statut</label>
+          <select id="ticket-status" name="ticket-status" [(ngModel)]="filtresTickets.ticket_status">
+            <option value="">Tous les statuts</option>
+            <option *ngFor="let statut of ticketStatuses" [value]="statut">{{ statut }}</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label for="ticket-page-size">Lignes par page</label>
+          <select id="ticket-page-size" name="ticket-page-size" [(ngModel)]="filtresTickets.page_size" (change)="appliquerFiltresTickets()">
+            <option *ngFor="let option of pageSizeOptions" [ngValue]="option">{{ option }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="filter-actions">
+        <button type="button" (click)="appliquerFiltresTickets()">Appliquer</button>
+        <button type="button" class="button-muted" (click)="reinitialiserFiltresTickets()">Reinitialiser</button>
+      </div>
+    </section>
+
+    <p *ngIf="chargementTickets()">Chargement des tickets...</p>
+
+    <div class="results-meta" *ngIf="!chargementTickets()">
+      <p>{{ totalTickets() }} ticket(s) • Affichage {{ debutTickets() }}-{{ finTickets() }}</p>
+      <div class="pagination-controls">
+        <button type="button" class="button-muted" (click)="pagePrecedenteTickets()" [disabled]="pageTickets === 1">Precedent</button>
+        <span>Page {{ pageTickets }} / {{ totalPagesTickets() }}</span>
+        <button type="button" class="button-muted" (click)="pageSuivanteTickets()" [disabled]="pageTickets >= totalPagesTickets()">Suivant</button>
+      </div>
+    </div>
+
+    <div class="table-shell" *ngIf="!chargementTickets() && tickets().length > 0; else noTickets">
+      <table>
+        <thead>
+          <tr>
+            <th>Ticket</th>
+            <th>SN</th>
+            <th>Ref Interne</th>
+            <th>Statut</th>
+            <th>Cycle</th>
+            <th>Ouvert le</th>
+            <th>Ferme le</th>
+            <th>Efficacite</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let ticket of tickets()">
+            <td>{{ ticket.ticket_code }}</td>
+            <td>{{ ticket.serial_number }}</td>
+            <td>{{ ticket.internal_reference || '-' }}</td>
+            <td><span class="status-badge" [attr.data-status]="ticket.ticket_status">{{ ticket.ticket_status }}</span></td>
+            <td>{{ ticket.cycle_number }}</td>
+            <td>{{ ticket.opened_at | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
+            <td>{{ ticket.closed_at ? (ticket.closed_at | date: 'yyyy-MM-dd HH:mm:ss') : '-' }}</td>
+            <td>{{ ticket.repair_effectiveness ?? '-' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ng-template #noTickets>
+      <p class="empty-state" *ngIf="!chargementTickets()">Aucun ticket de reparation ne correspond aux filtres saisis.</p>
     </ng-template>
-  </div>
+  </section>
+
+  <section class="section-card">
+    <h2>Repair Actions</h2>
+
+    <section class="toolbar-panel">
+      <div class="filter-grid">
+        <div class="filter-field">
+          <label for="action-sn">Serial number</label>
+          <input id="action-sn" name="action-sn" type="text" [(ngModel)]="filtresActions.serial_number" placeholder="Ex: 07685A1B5ZY18" />
+        </div>
+        <div class="filter-field">
+          <label for="action-ticket-code">Code ticket</label>
+          <input id="action-ticket-code" name="action-ticket-code" type="text" [(ngModel)]="filtresActions.ticket_code" placeholder="Ex: RT-07685..." />
+        </div>
+        <div class="filter-field">
+          <label for="action-defect-type">Type defaut</label>
+          <input id="action-defect-type" name="action-defect-type" type="text" [(ngModel)]="filtresActions.defect_type" placeholder="Ex: POWERON" />
+        </div>
+        <div class="filter-field">
+          <label for="action-progress">Progression</label>
+          <select id="action-progress" name="action-progress" [(ngModel)]="filtresActions.action_progress">
+            <option value="">Toutes les progressions</option>
+            <option *ngFor="let statut of actionProgressStatuses" [value]="statut">{{ statut }}</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label for="action-page-size">Lignes par page</label>
+          <select id="action-page-size" name="action-page-size" [(ngModel)]="filtresActions.page_size" (change)="appliquerFiltresActions()">
+            <option *ngFor="let option of pageSizeOptions" [ngValue]="option">{{ option }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="filter-actions">
+        <button type="button" (click)="appliquerFiltresActions()">Appliquer</button>
+        <button type="button" class="button-muted" (click)="reinitialiserFiltresActions()">Reinitialiser</button>
+      </div>
+    </section>
+
+    <p *ngIf="chargementActions()">Chargement des actions...</p>
+
+    <div class="results-meta" *ngIf="!chargementActions()">
+      <p>{{ totalActions() }} action(s) • Affichage {{ debutActions() }}-{{ finActions() }}</p>
+      <div class="pagination-controls">
+        <button type="button" class="button-muted" (click)="pagePrecedenteActions()" [disabled]="pageActions === 1">Precedent</button>
+        <span>Page {{ pageActions }} / {{ totalPagesActions() }}</span>
+        <button type="button" class="button-muted" (click)="pageSuivanteActions()" [disabled]="pageActions >= totalPagesActions()">Suivant</button>
+      </div>
+    </div>
+
+    <div class="table-shell" *ngIf="!chargementActions() && actions().length > 0; else noActions">
+      <table>
+        <thead>
+          <tr>
+            <th>Ticket</th>
+            <th>SN</th>
+            <th>Type Defaut</th>
+            <th>Defaut Observe</th>
+            <th>Cause Detectee</th>
+            <th>Action</th>
+            <th>Progression</th>
+            <th>Technicien</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let action of actions()">
+            <td>{{ action.ticket_code || '-' }}</td>
+            <td>{{ action.serial_number || '-' }}</td>
+            <td>{{ action.defect_type || '-' }}</td>
+            <td>{{ action.observed_defect || '-' }}</td>
+            <td>{{ action.detected_cause || '-' }}</td>
+            <td>{{ action.action_taken || '-' }}</td>
+            <td><span class="status-badge" [attr.data-status]="action.action_progress">{{ action.action_progress || '-' }}</span></td>
+            <td>{{ action.technician_matricule || '-' }}</td>
+            <td>{{ action.performed_at ? (action.performed_at | date: 'yyyy-MM-dd HH:mm:ss') : '-' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ng-template #noActions>
+      <p class="empty-state" *ngIf="!chargementActions()">Aucune action de reparation ne correspond aux filtres saisis.</p>
+    </ng-template>
+  </section>
 </section>

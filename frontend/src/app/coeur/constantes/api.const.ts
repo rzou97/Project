@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'http://127.0.0.1:8000/api';
+export const API_BASE_URL = '/api';
 
 export const API_ENDPOINTS = {
   connexion: `${API_BASE_URL}/auth/login/`,
@@ -11,6 +11,7 @@ export const API_ENDPOINTS = {
   kpiStatutTesteurs: `${API_BASE_URL}/kpi/testers-current-status/`,
 
   cartes: `${API_BASE_URL}/boards/`,
+  resultatsTest: `${API_BASE_URL}/test-results/`,
   gestionPannes: `${API_BASE_URL}/failure-cases/`,
 
   ticketsReparation: `${API_BASE_URL}/repairs/tickets/`,

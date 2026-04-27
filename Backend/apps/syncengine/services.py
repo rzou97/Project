@@ -19,6 +19,8 @@ KO_RESULTS = {
     TestResult.Result.TERMINATED,
 }
 
+ENRICHED_VIEW_NAME = "public.v3_test_events_enriched"
+
 
 def dictfetchall(cursor):
     columns = [col[0] for col in cursor.description]
@@ -70,7 +72,7 @@ def build_source_event_key(row: dict) -> str:
 
 
 def fetch_enriched_rows(last_ingested_ts=None, limit: int = 500):
-    sql = """
+    sql = f"""
         SELECT
             sn_global,
             reference_client,
@@ -85,7 +87,7 @@ def fetch_enriched_rows(last_ingested_ts=None, limit: int = 500):
             ingested_ts,
             phase,
             result_norm
-        FROM test_events_base_enriched
+        FROM {ENRICHED_VIEW_NAME}
         WHERE (%s IS NULL OR ingested_ts > %s)
         ORDER BY ingested_ts ASC, event_ts ASC, sn_global ASC, station_id ASC
         LIMIT %s
@@ -296,7 +298,7 @@ def mark_sync_failed(source_table: str, error_message: str) -> SyncCursor:
     return cursor
 @transaction.atomic
 def sync_from_enriched_view(limit: int = 500):
-    source_table = "test_events_base_enriched"
+    source_table = ENRICHED_VIEW_NAME
     cursor = mark_sync_running(source_table)
 
     rows = fetch_enriched_rows(cursor.last_source_timestamp, limit=limit)

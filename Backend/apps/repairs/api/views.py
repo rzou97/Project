@@ -6,6 +6,7 @@ from apps.repairs.filters import RepairActionFilter, RepairTicketFilter
 from apps.repairs.models import RepairAction, RepairTicket
 from apps.repairs.permission import RepairActionPermission
 from apps.repairs.services import apply_repair_workflow
+from common.pagination import StandardResultsSetPagination
 
 from .serializers import RepairActionSerializer, RepairTicketSerializer
 
@@ -14,6 +15,7 @@ class RepairTicketViewSet(ModelViewSet):
     queryset = RepairTicket.objects.select_related("failure_case", "failure_case__board").all()
     serializer_class = RepairTicketSerializer
     permission_classes = [RepairActionPermission]
+    pagination_class = StandardResultsSetPagination
     filterset_class = RepairTicketFilter
     search_fields = [
         "ticket_code",
@@ -47,6 +49,7 @@ class RepairActionViewSet(ModelViewSet):
     ).all()
     serializer_class = RepairActionSerializer
     permission_classes = [RepairActionPermission]
+    pagination_class = StandardResultsSetPagination
     filterset_class = RepairActionFilter
     search_fields = [
         "repair_ticket__ticket_code",

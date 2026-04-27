@@ -3,6 +3,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from apps.boards.filters import BoardFilter
 from apps.boards.models import Board
+from common.pagination import StandardResultsSetPagination
 from .serializers import BoardSerializer
 
 
@@ -10,6 +11,7 @@ class BoardViewSet(ReadOnlyModelViewSet):
     queryset = Board.objects.all()
     serializer_class = BoardSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
     filterset_class = BoardFilter
     search_fields = ["serial_number", "client_reference", "internal_reference"]
     ordering_fields = [

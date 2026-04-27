@@ -1,38 +1,99 @@
-<section class="page">
-  <header class="entete">
-    <h1>Failure Cases</h1>
+<section class="module-page">
+  <header class="module-header">
+    <div class="module-title">
+      <h1>Failure Cases</h1>
+      <p>Filtrez les pannes par SN, references, testeur, type de defaut et statut.</p>
+    </div>
     <button type="button" (click)="chargerPannes()">Rafraichir</button>
   </header>
 
   <p class="erreur" *ngIf="erreur()">{{ erreur() }}</p>
+  <section class="toolbar-panel">
+    <div class="filter-grid">
+      <div class="filter-field">
+        <label for="failure-sn">Serial number</label>
+        <input id="failure-sn" name="failure-sn" type="text" [(ngModel)]="filtres.serial_number" placeholder="Rechercher un SN" />
+      </div>
+      <div class="filter-field">
+        <label for="failure-client-ref">Reference client</label>
+        <input id="failure-client-ref" name="failure-client-ref" type="text" [(ngModel)]="filtres.client_reference" placeholder="Ex: 07685.18" />
+      </div>
+      <div class="filter-field">
+        <label for="failure-internal-ref">Reference interne</label>
+        <input id="failure-internal-ref" name="failure-internal-ref" type="text" [(ngModel)]="filtres.internal_reference" placeholder="Ex: IE1664L01" />
+      </div>
+      <div class="filter-field">
+        <label for="failure-status">Statut</label>
+        <select id="failure-status" name="failure-status" [(ngModel)]="filtres.failure_status">
+          <option value="">Tous les statuts</option>
+          <option *ngFor="let statut of statuts" [value]="statut">{{ statut }}</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="failure-tester">Testeur</label>
+        <input id="failure-tester" name="failure-tester" type="text" [(ngModel)]="filtres.detected_on_tester" placeholder="Ex: BT_DEVERMINAGE_V3_IES_V4" />
+      </div>
+      <div class="filter-field">
+        <label for="failure-type">Type de defaut</label>
+        <input id="failure-type" name="failure-type" type="text" [(ngModel)]="filtres.failure_type" placeholder="Ex: POWERON" />
+      </div>
+      <div class="filter-field">
+        <label for="failure-page-size">Lignes par page</label>
+        <select id="failure-page-size" name="failure-page-size" [(ngModel)]="filtres.page_size" (change)="changerTaillePage()">
+          <option *ngFor="let option of pageSizeOptions" [ngValue]="option">{{ option }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="filter-actions">
+      <button type="button" (click)="appliquerFiltres()">Appliquer</button>
+      <button type="button" class="button-muted" (click)="reinitialiserFiltres()">Reinitialiser</button>
+    </div>
+  </section>
+
   <p *ngIf="chargement()">Chargement des pannes...</p>
 
-  <table *ngIf="!chargement() && pannes().length > 0">
-    <thead>
-      <tr>
-        <th>SN</th>
-        <th>Phase</th>
-        <th>Testeur</th>
-        <th>Type Defaut</th>
-        <th>Message</th>
-        <th>Statut</th>
-        <th>Ouverte le</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let panne of pannes()">
-        <td>{{ panne.serial_number }}</td>
-        <td>{{ panne.detected_in_phase || '-' }}</td>
-        <td>{{ panne.detected_on_tester || '-' }}</td>
-        <td>{{ panne.failure_type || '-' }}</td>
-        <td>{{ panne.failure_message || '-' }}</td>
-        <td>{{ panne.failure_status }}</td>
-        <td>{{ panne.opened_at }}</td>
-      </tr>
-    </tbody>
-  </table>
+  <div class="results-meta" *ngIf="!chargement()">
+    <p>{{ totalPannes() }} panne(s) trouvee(s) • Affichage {{ debutResultats() }}-{{ finResultats() }}</p>
+    <div class="pagination-controls">
+      <button type="button" class="button-muted" (click)="pagePrecedente()" [disabled]="pageCourante === 1">Precedent</button>
+      <span>Page {{ pageCourante }} / {{ totalPages() }}</span>
+      <button type="button" class="button-muted" (click)="pageSuivante()" [disabled]="pageCourante >= totalPages()">Suivant</button>
+    </div>
+  </div>
 
-  <p *ngIf="!chargement() && !erreur() && pannes().length === 0">
-    Aucun failure case trouve.
+  <div class="table-shell" *ngIf="!chargement() && pannes().length > 0">
+    <table>
+      <thead>
+        <tr>
+          <th>SN</th>
+          <th>Ref Client</th>
+          <th>Ref Interne</th>
+          <th>Phase</th>
+          <th>Testeur</th>
+          <th>Type Defaut</th>
+          <th>Message</th>
+          <th>Statut</th>
+          <th>Ouverte le</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let panne of pannes()">
+          <td>{{ panne.serial_number }}</td>
+          <td>{{ panne.client_reference || '-' }}</td>
+          <td>{{ panne.internal_reference || '-' }}</td>
+          <td>{{ panne.detected_in_phase || '-' }}</td>
+          <td>{{ panne.detected_on_tester || '-' }}</td>
+          <td>{{ panne.failure_type || '-' }}</td>
+          <td>{{ panne.failure_message || '-' }}</td>
+          <td><span class="status-badge" [attr.data-status]="panne.failure_status">{{ panne.failure_status }}</span></td>
+          <td>{{ panne.opened_at | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="empty-state" *ngIf="!chargement() && !erreur() && pannes().length === 0">
+    Aucune panne ne correspond aux filtres saisis.
   </p>
 </section>

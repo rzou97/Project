@@ -153,3 +153,233 @@ tbody tr:hover {
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
+.module-page {
+  display: grid;
+  gap: 20px;
+}
+
+.module-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.module-title {
+  display: grid;
+  gap: 6px;
+}
+
+.module-title p,
+.results-meta p {
+  margin: 0;
+}
+
+.toolbar-panel,
+.section-card {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(129, 153, 193, 0.25);
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.92), rgba(244, 248, 255, 0.9)),
+    linear-gradient(0deg, rgba(45, 201, 255, 0.04), rgba(255, 122, 24, 0.04));
+  box-shadow: var(--shadow-hard);
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.filter-field {
+  display: grid;
+  gap: 6px;
+}
+
+.filter-field label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #40557e;
+}
+
+.filter-field input,
+.filter-field select {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(136, 158, 194, 0.55);
+  background: rgba(248, 251, 255, 0.95);
+  color: var(--text-dark);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.filter-field input:focus,
+.filter-field select:focus {
+  border-color: rgba(45, 201, 255, 0.75);
+  box-shadow: 0 0 0 3px rgba(45, 201, 255, 0.18);
+}
+
+.filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.button-muted {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(136, 158, 194, 0.55);
+  color: var(--text-dark);
+  box-shadow: none;
+}
+
+.button-muted:hover {
+  box-shadow: 0 0 0 1px rgba(136, 158, 194, 0.3), 0 8px 14px rgba(19, 31, 53, 0.12);
+}
+
+.results-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pagination-controls span {
+  min-width: 110px;
+  text-align: center;
+  color: var(--text-dark);
+  font-weight: 700;
+}
+
+.table-shell {
+  border-radius: 18px;
+  overflow: auto;
+  border: 1px solid rgba(136, 158, 194, 0.28);
+  background: rgba(248, 251, 255, 0.97);
+  box-shadow: var(--shadow-hard);
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 92px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.status-badge[data-status='HEALTHY'],
+.status-badge[data-status='PASSED'],
+.status-badge[data-status='REPAIRED'],
+.status-badge[data-status='CLOSED'],
+.status-badge[data-status='DONE'] {
+  color: #0f6c4f;
+  background: rgba(20, 178, 125, 0.12);
+  border-color: rgba(20, 178, 125, 0.26);
+}
+
+.status-badge[data-status='IN_DEFECT'],
+.status-badge[data-status='FAILED'],
+.status-badge[data-status='ERROR'],
+.status-badge[data-status='TERMINATED'],
+.status-badge[data-status='OPEN'] {
+  color: #9b3d0d;
+  background: rgba(255, 122, 24, 0.14);
+  border-color: rgba(255, 122, 24, 0.26);
+}
+
+.status-badge[data-status='IN_REPAIR'],
+.status-badge[data-status='IN_PROGRESS'] {
+  color: #0f4c9a;
+  background: rgba(45, 201, 255, 0.14);
+  border-color: rgba(45, 201, 255, 0.28);
+}
+
+.status-badge[data-status='WAITING_RETEST'],
+.status-badge[data-status='WAITING_PARTS'] {
+  color: #8b5f0b;
+  background: rgba(255, 198, 46, 0.18);
+  border-color: rgba(255, 198, 46, 0.3);
+}
+
+.link-serial {
+  color: #1e5dd1;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.link-serial:hover {
+  text-decoration: underline;
+}
+
+.empty-state {
+  margin: 0;
+  padding: 18px;
+  border-radius: 16px;
+  border: 1px dashed rgba(136, 158, 194, 0.45);
+  background: rgba(248, 251, 255, 0.66);
+}
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.overview-card {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(136, 158, 194, 0.24);
+  background: rgba(245, 249, 255, 0.85);
+}
+
+.overview-label {
+  color: #5f7191;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.overview-value {
+  color: var(--text-dark);
+  font-size: 18px;
+}
+
+@media (max-width: 920px) {
+  .module-header,
+  .results-meta {
+    align-items: stretch;
+  }
+
+  .filter-actions,
+  .pagination-controls {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .filter-actions button,
+  .pagination-controls button {
+    flex: 1 1 0;
+  }
+}

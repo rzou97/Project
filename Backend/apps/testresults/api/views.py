@@ -3,6 +3,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from apps.testresults.filters import TestResultFilter
 from apps.testresults.models import TestResult
+from common.pagination import StandardResultsSetPagination
 from .serializers import TestResultSerializer
 
 
@@ -10,6 +11,7 @@ class TestResultViewSet(ReadOnlyModelViewSet):
     queryset = TestResult.objects.select_related("board").all()
     serializer_class = TestResultSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
     filterset_class = TestResultFilter
     search_fields = [
         "serial_number",

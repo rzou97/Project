@@ -1,36 +1,99 @@
-<section class="page">
-  <header class="entete">
-    <h1>Cartes</h1>
+<section class="module-page">
+  <header class="module-header">
+    <div class="module-title">
+      <h1>Cartes</h1>
+      <p>Recherchez une carte par SN, reference interne et statut, puis ouvrez son historique de tests.</p>
+    </div>
     <button type="button" (click)="chargerCartes()">Rafraichir</button>
   </header>
 
   <p class="erreur" *ngIf="erreur()">{{ erreur() }}</p>
+  <section class="toolbar-panel">
+    <div class="filter-grid">
+      <div class="filter-field">
+        <label for="card-sn">Serial number</label>
+        <input id="card-sn" name="card-sn" type="text" [(ngModel)]="filtres.serial_number" placeholder="Ex: 07685A1B5ZY18" />
+      </div>
+      <div class="filter-field">
+        <label for="card-internal-ref">Reference interne</label>
+        <input
+          id="card-internal-ref"
+          name="card-internal-ref"
+          type="text"
+          [(ngModel)]="filtres.internal_reference"
+          placeholder="Ex: IE1664L01"
+        />
+      </div>
+      <div class="filter-field">
+        <label for="card-status">Statut</label>
+        <select id="card-status" name="card-status" [(ngModel)]="filtres.current_status">
+          <option value="">Tous les statuts</option>
+          <option *ngFor="let statut of statuts" [value]="statut">{{ statut }}</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="card-page-size">Lignes par page</label>
+        <select id="card-page-size" name="card-page-size" [(ngModel)]="filtres.page_size" (change)="changerTaillePage()">
+          <option *ngFor="let option of pageSizeOptions" [ngValue]="option">{{ option }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="filter-actions">
+      <button type="button" (click)="appliquerFiltres()">Appliquer</button>
+      <button type="button" class="button-muted" (click)="reinitialiserFiltres()">Reinitialiser</button>
+    </div>
+  </section>
+
   <p *ngIf="chargement()">Chargement des cartes...</p>
 
-  <table *ngIf="!chargement() && cartes().length > 0">
-    <thead>
-      <tr>
-        <th>Serial Number</th>
-        <th>Ref Client</th>
-        <th>Ref Interne</th>
-        <th>Statut</th>
-        <th>First Seen</th>
-        <th>Last Seen</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let carte of cartes()">
-        <td>{{ carte.serial_number }}</td>
-        <td>{{ carte.client_reference || '-' }}</td>
-        <td>{{ carte.internal_reference || '-' }}</td>
-        <td>{{ carte.current_status }}</td>
-        <td>{{ carte.first_seen_at || '-' }}</td>
-        <td>{{ carte.last_seen_at || '-' }}</td>
-      </tr>
-    </tbody>
-  </table>
+  <div class="results-meta" *ngIf="!chargement()">
+    <p>{{ totalCartes() }} carte(s) trouvee(s) • Affichage {{ debutResultats() }}-{{ finResultats() }}</p>
+    <div class="pagination-controls">
+      <button type="button" class="button-muted" (click)="pagePrecedente()" [disabled]="pageCourante === 1">Precedent</button>
+      <span>Page {{ pageCourante }} / {{ totalPages() }}</span>
+      <button type="button" class="button-muted" (click)="pageSuivante()" [disabled]="pageCourante >= totalPages()">Suivant</button>
+    </div>
+  </div>
 
-  <p *ngIf="!chargement() && !erreur() && cartes().length === 0">
-    Aucune carte trouvee.
+  <div class="table-shell" *ngIf="!chargement() && cartes().length > 0">
+    <table>
+      <thead>
+        <tr>
+          <th>Serial Number</th>
+          <th>Ref Client</th>
+          <th>Ref Interne</th>
+          <th>Statut</th>
+          <th>First Seen</th>
+          <th>Last Seen</th>
+          <th>Mouvements</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let carte of cartes()">
+          <td>
+            <a class="link-serial" [routerLink]="['/cartes', carte.serial_number]">
+              {{ carte.serial_number }}
+            </a>
+          </td>
+          <td>{{ carte.client_reference || '-' }}</td>
+          <td>{{ carte.internal_reference || '-' }}</td>
+          <td>
+            <span class="status-badge" [attr.data-status]="carte.current_status">
+              {{ carte.current_status }}
+            </span>
+          </td>
+          <td>{{ carte.first_seen_at ? (carte.first_seen_at | date: 'yyyy-MM-dd HH:mm:ss') : '-' }}</td>
+          <td>{{ carte.last_seen_at ? (carte.last_seen_at | date: 'yyyy-MM-dd HH:mm:ss') : '-' }}</td>
+          <td>
+            <a class="link-serial" [routerLink]="['/cartes', carte.serial_number]">Voir les tests</a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="empty-state" *ngIf="!chargement() && !erreur() && cartes().length === 0">
+    Aucune carte ne correspond aux filtres saisis.
   </p>
 </section>

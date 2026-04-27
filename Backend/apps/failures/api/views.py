@@ -3,6 +3,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from apps.failures.filters import FailureCaseFilter
 from apps.failures.models import FailureCase
+from common.pagination import StandardResultsSetPagination
 from .serializers import FailureCaseSerializer
 
 
@@ -10,6 +11,7 @@ class FailureCaseViewSet(ReadOnlyModelViewSet):
     queryset = FailureCase.objects.select_related("board", "source_test_result").all()
     serializer_class = FailureCaseSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
     filterset_class = FailureCaseFilter
     search_fields = [
         "serial_number",
