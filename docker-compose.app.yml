@@ -1,0 +1,130 @@
+services:
+  django_app:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: django_app
+    restart: unless-stopped
+    env_file:
+      - ./Backend/.env
+    environment:
+      DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-config.settings.prod}
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/0}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:-redis://redis:6379/0}
+    command:
+      - sh
+      - -c
+      - |
+        python manage.py migrate &&
+        python manage.py collectstatic --noinput &&
+        exec gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120
+    ports:
+      - "8000:8000"
+    volumes:
+      - backend_media:/app/media
+      - backend_static:/app/staticfiles
+    depends_on:
+      - redis
+    networks:
+      - app_net
+      - tb_shared_net
+
+  celery_worker:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: celery_worker
+    restart: unless-stopped
+    env_file:
+      - ./Backend/.env
+    environment:
+      DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-config.settings.prod}
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/0}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:-redis://redis:6379/0}
+    command:
+      - celery
+      - -A
+      - config
+      - worker
+      - -l
+      - info
+    depends_on:
+      - redis
+      - django_app
+    volumes:
+      - backend_media:/app/media
+    networks:
+      - app_net
+      - tb_shared_net
+
+  celery_beat:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: celery_beat
+    restart: unless-stopped
+    env_file:
+      - ./Backend/.env
+    environment:
+      DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-config.settings.prod}
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/0}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:-redis://redis:6379/0}
+    command:
+      - celery
+      - -A
+      - config
+      - beat
+      - -l
+      - info
+    depends_on:
+      - redis
+      - django_app
+    volumes:
+      - backend_media:/app/media
+    networks:
+      - app_net
+      - tb_shared_net
+
+  redis:
+    image: redis:7-alpine
+    container_name: app_redis
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    restart: unless-stopped
+    depends_on:
+      - django_app
+    ports:
+      - "4200:80"
+    networks:
+      - app_net
+
+volumes:
+  backend_media:
+  backend_static:
+  redis_data:
+
+networks:
+  app_net:
+    driver: bridge
+  tb_shared_net:
+    external: true
+    name: ${INGESTION_NETWORK:-testbench_tb_net}
