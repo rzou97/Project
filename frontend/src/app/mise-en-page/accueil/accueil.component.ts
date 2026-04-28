@@ -1,7 +1,12 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { forkJoin } from 'rxjs';
 import { KpiApiService } from '../../coeur/services-api/kpi-api.service';
-import { TesterCurrentStatusKpi, TesterFpyInstantKpi } from '../../coeur/modeles/kpi.model';
+import {
+  TauxPanneActuelKpi,
+  TesterCurrentStatusKpi,
+  TesterFpyInstantKpi,
+} from '../../coeur/modeles/kpi.model';
 
 @Component({
   selector: 'app-accueil',
@@ -18,6 +23,7 @@ export class AccueilComponent implements OnInit {
 
   fpyTesteurs = signal<TesterFpyInstantKpi[]>([]);
   statutsTesteurs = signal<TesterCurrentStatusKpi[]>([]);
+  tauxPannesActuel = signal<TauxPanneActuelKpi | null>(null);
 
   ngOnInit(): void {
     this.chargerDonnees();
@@ -27,18 +33,19 @@ export class AccueilComponent implements OnInit {
     this.chargement.set(true);
     this.erreur.set('');
 
-    this.kpiApiService.obtenirFpyInstantTesteurs().subscribe({
-      next: (data) => this.fpyTesteurs.set(data),
-      error: () => this.erreur.set('Impossible de charger le FPY instantané.'),
-    });
-
-    this.kpiApiService.obtenirStatutActuelTesteurs().subscribe({
-      next: (data) => {
-        this.statutsTesteurs.set(data);
+    forkJoin({
+      fpy: this.kpiApiService.obtenirFpyInstantTesteurs(),
+      statuts: this.kpiApiService.obtenirStatutActuelTesteurs(),
+      tauxPannes: this.kpiApiService.obtenirTauxPannesActuel(),
+    }).subscribe({
+      next: ({ fpy, statuts, tauxPannes }) => {
+        this.fpyTesteurs.set(fpy);
+        this.statutsTesteurs.set(statuts);
+        this.tauxPannesActuel.set(tauxPannes);
         this.chargement.set(false);
       },
       error: () => {
-        this.erreur.set('Impossible de charger le statut des testeurs.');
+        this.erreur.set('Impossible de charger les KPI de production.');
         this.chargement.set(false);
       },
     });
@@ -49,13 +56,18 @@ export class AccueilComponent implements OnInit {
       case 'ACTIVE':
         return 'Actif';
       case 'DEGRADED':
-        return 'Dégradé';
+        return 'Degrade';
       case 'STOPPED':
-        return 'En arrêt';
+        return 'En arret';
       case 'IN_REPAIR':
-        return 'En réparation';
+        return 'En reparation';
       default:
         return statut;
     }
+  }
+
+  referenceLabel(reference: string): string {
+    const cleaned = (reference || '').trim();
+    return cleaned || '-';
   }
 }

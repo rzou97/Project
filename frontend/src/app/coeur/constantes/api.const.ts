@@ -9,6 +9,7 @@ export const API_ENDPOINTS = {
 
   kpiTesteursFpyInstant: `${API_BASE_URL}/kpi/testers-fpy-instant/`,
   kpiStatutTesteurs: `${API_BASE_URL}/kpi/testers-current-status/`,
+  kpiTauxPannesActuel: `${API_BASE_URL}/kpi/current-failure-rate/`,
 
   cartes: `${API_BASE_URL}/boards/`,
   resultatsTest: `${API_BASE_URL}/test-results/`,

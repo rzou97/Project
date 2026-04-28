@@ -10,7 +10,7 @@ export class SessionService {
   private readonly cleUtilisateur = 'utilisateur_connecte';
 
   utilisateur = signal<Utilisateur | null>(this.lireUtilisateur());
-  estConnecte = signal<boolean>(!!localStorage.getItem(this.cleAccessToken));
+  estConnecte = signal<boolean>(this.aUneSessionLocale());
 
   definirSession(access: string, refresh: string, utilisateur: Utilisateur): void {
     localStorage.setItem(this.cleAccessToken, access);
@@ -18,6 +18,14 @@ export class SessionService {
     localStorage.setItem(this.cleUtilisateur, JSON.stringify(utilisateur));
     this.utilisateur.set(utilisateur);
     this.estConnecte.set(true);
+  }
+
+  mettreAJourTokens(access: string, refresh?: string): void {
+    localStorage.setItem(this.cleAccessToken, access);
+    if (refresh) {
+      localStorage.setItem(this.cleRefreshToken, refresh);
+    }
+    this.estConnecte.set(this.aUneSessionLocale());
   }
 
   viderSession(): void {
@@ -32,6 +40,10 @@ export class SessionService {
     return localStorage.getItem(this.cleAccessToken);
   }
 
+  obtenirRefreshToken(): string | null {
+    return localStorage.getItem(this.cleRefreshToken);
+  }
+
   private lireUtilisateur(): Utilisateur | null {
     const brut = localStorage.getItem(this.cleUtilisateur);
     if (!brut) return null;
@@ -41,5 +53,9 @@ export class SessionService {
     } catch {
       return null;
     }
+  }
+
+  private aUneSessionLocale(): boolean {
+    return !!(localStorage.getItem(this.cleAccessToken) || localStorage.getItem(this.cleRefreshToken));
   }
 }

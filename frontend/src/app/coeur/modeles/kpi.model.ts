@@ -17,3 +17,17 @@ export interface TesterCurrentStatusKpi {
   alert_status: string;
   open_alert_count: number;
 }
+
+export interface TauxPanneActuelReferenceKpi {
+  internal_reference: string;
+  total_sn: number;
+  defective_sn: number;
+  current_failure_rate: number;
+}
+
+export interface TauxPanneActuelKpi {
+  total_sn: number;
+  total_defective_sn: number;
+  current_failure_rate: number;
+  references: TauxPanneActuelReferenceKpi[];
+}

@@ -24,6 +24,20 @@ class TesterCurrentStatusKpi(serializers.Serializer):
     failed_tests_current_hour = serializers.IntegerField()
 
 
+class CurrentFailureRateReferenceKpi(serializers.Serializer):
+    internal_reference = serializers.CharField(allow_blank=True)
+    total_sn = serializers.IntegerField()
+    defective_sn = serializers.IntegerField()
+    current_failure_rate = serializers.DecimalField(max_digits=8, decimal_places=2)
+
+
+class CurrentFailureRateKpi(serializers.Serializer):
+    total_sn = serializers.IntegerField()
+    total_defective_sn = serializers.IntegerField()
+    current_failure_rate = serializers.DecimalField(max_digits=8, decimal_places=2)
+    references = CurrentFailureRateReferenceKpi(many=True)
+
+
 # Backward-compatible serializer names used by existing imports.
 class TesterFpyInstantKpiSerializer(TesterFpyInstantKpi):
     pass
@@ -38,4 +52,8 @@ class TesterFpyInstantSerializer(TesterFpyInstantKpi):
 
 
 class TesterCurrentStatusSerializer(TesterCurrentStatusKpi):
+    pass
+
+
+class CurrentFailureRateKpiSerializer(CurrentFailureRateKpi):
     pass

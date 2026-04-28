@@ -1,8 +1,10 @@
 from decimal import Decimal, ROUND_HALF_UP
 
+from django.db.models import Count, Q
 from django.utils import timezone
 
 from apps.alerts.models import AlertEvent, AlertRule
+from apps.boards.models import Board
 from apps.maintenance.models import CurativeTicket
 from apps.testresults.models import TestResult
 
@@ -12,6 +14,11 @@ OPEN_TICKET_STATUSES = [
     CurativeTicket.Status.OPEN,
     CurativeTicket.Status.IN_PROGRESS,
     CurativeTicket.Status.WAITING_VALIDATION,
+]
+ACTIVE_FAILURE_BOARD_STATUSES = [
+    Board.Status.IN_DEFECT,
+    Board.Status.IN_REPAIR,
+    Board.Status.WAITING_RETEST,
 ]
 
 
@@ -224,6 +231,68 @@ def get_testers_current_status():
     return data
 
 
+def get_current_failure_rate_by_reference():
+    boards = Board.objects.all()
+    total_sn = boards.count()
+    total_defective_sn = boards.filter(
+        current_status__in=ACTIVE_FAILURE_BOARD_STATUSES
+    ).count()
+
+    current_failure_rate = (
+        _round_2((Decimal(total_defective_sn) / Decimal(total_sn)) * Decimal("100"))
+        if total_sn > 0
+        else Decimal("0.00")
+    )
+
+    references = []
+    grouped_rows = (
+        boards.values("internal_reference")
+        .annotate(
+            total_sn=Count("id"),
+            defective_sn=Count(
+                "id",
+                filter=Q(current_status__in=ACTIVE_FAILURE_BOARD_STATUSES),
+            ),
+        )
+        .order_by()
+    )
+
+    for row in grouped_rows:
+        reference_total = row["total_sn"]
+        defective_count = row["defective_sn"]
+        failure_rate = (
+            _round_2(
+                (Decimal(defective_count) / Decimal(reference_total)) * Decimal("100")
+            )
+            if reference_total > 0
+            else Decimal("0.00")
+        )
+
+        references.append(
+            {
+                "internal_reference": (row["internal_reference"] or "").strip(),
+                "total_sn": reference_total,
+                "defective_sn": defective_count,
+                "current_failure_rate": failure_rate,
+            }
+        )
+
+    references.sort(
+        key=lambda item: (
+            -item["defective_sn"],
+            -item["current_failure_rate"],
+            item["internal_reference"] or "ZZZZZZZZ",
+        )
+    )
+
+    return {
+        "total_sn": total_sn,
+        "total_defective_sn": total_defective_sn,
+        "current_failure_rate": current_failure_rate,
+        "references": references,
+    }
+
+
 class KpiService:
     @staticmethod
     def get_testers_fpy_instant():
@@ -232,3 +301,7 @@ class KpiService:
     @staticmethod
     def get_testers_current_status():
         return get_testers_current_status()
+
+    @staticmethod
+    def get_current_failure_rate_by_reference():
+        return get_current_failure_rate_by_reference()

@@ -11,6 +11,11 @@ export interface AuthentificationReponse {
   user: Utilisateur;
 }
 
+export interface RafraichissementTokenReponse {
+  access: string;
+  refresh?: string;
+}
+
 export interface InscriptionPayload {
   first_name: string;
   last_name: string;

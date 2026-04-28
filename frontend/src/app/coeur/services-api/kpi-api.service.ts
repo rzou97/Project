@@ -2,7 +2,11 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 import { API_ENDPOINTS } from '../constantes/api.const';
-import { TesterCurrentStatusKpi, TesterFpyInstantKpi } from '../modeles/kpi.model';
+import {
+  TauxPanneActuelKpi,
+  TesterCurrentStatusKpi,
+  TesterFpyInstantKpi,
+} from '../modeles/kpi.model';
 import { ApiListResponse, normalizeListResponse } from './api-base';
 
 @Injectable({
@@ -21,5 +25,9 @@ export class KpiApiService {
     return this.http
       .get<ApiListResponse<TesterCurrentStatusKpi>>(API_ENDPOINTS.kpiStatutTesteurs)
       .pipe(map(normalizeListResponse));
+  }
+
+  obtenirTauxPannesActuel(): Observable<TauxPanneActuelKpi> {
+    return this.http.get<TauxPanneActuelKpi>(API_ENDPOINTS.kpiTauxPannesActuel);
   }
 }

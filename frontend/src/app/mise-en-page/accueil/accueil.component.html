@@ -10,14 +10,52 @@
     {{ erreur() }}
   </div>
 
+  <div class="bloc" *ngIf="tauxPannesActuel() as tauxPannes">
+    <h2>Taux de pannes actuel</h2>
+
+    <div class="overview-grid">
+      <article class="overview-card">
+        <span class="overview-label">Produits suivis</span>
+        <strong class="overview-value">{{ tauxPannes.total_sn }}</strong>
+      </article>
+      <article class="overview-card">
+        <span class="overview-label">Produits en panne</span>
+        <strong class="overview-value">{{ tauxPannes.total_defective_sn }}</strong>
+      </article>
+      <article class="overview-card">
+        <span class="overview-label">Taux global</span>
+        <strong class="overview-value">{{ tauxPannes.current_failure_rate }} %</strong>
+      </article>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Reference interne</th>
+          <th>SN suivis</th>
+          <th>SN en panne</th>
+          <th>Taux actuel</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of tauxPannes.references">
+          <td>{{ referenceLabel(item.internal_reference) }}</td>
+          <td>{{ item.total_sn }}</td>
+          <td>{{ item.defective_sn }}</td>
+          <td>{{ item.current_failure_rate }} %</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
   <div class="bloc">
-    <h2>FPY instantané des testeurs</h2>
+    <h2>FPY instantane des testeurs</h2>
     <table>
       <thead>
         <tr>
           <th>Testeur</th>
           <th>Date</th>
-          <th>SN testés</th>
+          <th>SN testes</th>
           <th>SN OK</th>
           <th>FPY</th>
           <th>Dernier test</th>
@@ -42,8 +80,8 @@
       <thead>
         <tr>
           <th>Testeur</th>
-          <th>Opérateur</th>
-          <th>Référence interne</th>
+          <th>Operateur</th>
+          <th>Reference interne</th>
           <th>Dernier PV</th>
           <th>Fail rate</th>
           <th>Statut</th>

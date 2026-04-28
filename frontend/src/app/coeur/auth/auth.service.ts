@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, throwError } from 'rxjs';
 import { API_ENDPOINTS } from '../constantes/api.const';
 import { SessionService } from './session.service';
 import {
@@ -9,6 +9,7 @@ import {
   AuthentificationReponse,
   InscriptionPayload,
   InscriptionReponse,
+  RafraichissementTokenReponse,
 } from '../modeles/auth.model';
 
 @Injectable({
@@ -32,6 +33,21 @@ export class AuthService {
 
   seDeconnecter(): void {
     this.sessionService.viderSession();
+  }
+
+  rafraichirToken(): Observable<RafraichissementTokenReponse> {
+    const refresh = this.sessionService.obtenirRefreshToken();
+    if (!refresh) {
+      return throwError(() => new Error('Aucun refresh token disponible.'));
+    }
+
+    return this.http
+      .post<RafraichissementTokenReponse>(API_ENDPOINTS.rafraichirToken, { refresh })
+      .pipe(
+        tap((reponse) => {
+          this.sessionService.mettreAJourTokens(reponse.access, reponse.refresh);
+        })
+      );
   }
 
   inscrire(payload: InscriptionPayload): Observable<InscriptionReponse> {
