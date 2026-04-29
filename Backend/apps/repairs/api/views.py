@@ -7,10 +7,56 @@ from apps.failures.models import FailureCase
 from apps.repairs.filters import RepairActionFilter, RepairTicketFilter
 from apps.repairs.models import RepairAction, RepairTicket
 from apps.repairs.permission import RepairActionPermission
-from apps.repairs.services import apply_repair_ticket_workflow, apply_repair_workflow
+from apps.repairs import services as repair_services
 from common.pagination import StandardResultsSetPagination
 
 from .serializers import RepairActionSerializer, RepairTicketSerializer
+
+
+def _apply_repair_ticket_workflow(ticket: RepairTicket) -> RepairTicket:
+    workflow = getattr(repair_services, "apply_repair_ticket_workflow", None)
+    if workflow:
+        return workflow(ticket)
+
+    failure_case = ticket.failure_case
+    board = failure_case.board
+    status = ticket.ticket_status
+
+    if status in [RepairTicket.Status.OPEN, RepairTicket.Status.IN_PROGRESS]:
+        if failure_case.failure_status not in [
+            FailureCase.Status.REPAIRED,
+            FailureCase.Status.INVALIDATED,
+        ]:
+            failure_case.failure_status = FailureCase.Status.IN_REPAIR
+            failure_case.save(update_fields=["failure_status", "updated_at"])
+
+        if board.current_status != Board.Status.IN_REPAIR:
+            board.current_status = Board.Status.IN_REPAIR
+            board.save(update_fields=["current_status", "updated_at"])
+
+    elif status == RepairTicket.Status.WAITING_RETEST:
+        if failure_case.failure_status not in [
+            FailureCase.Status.REPAIRED,
+            FailureCase.Status.INVALIDATED,
+        ]:
+            failure_case.failure_status = FailureCase.Status.WAITING_RETEST
+            failure_case.save(update_fields=["failure_status", "updated_at"])
+
+        if board.current_status != Board.Status.WAITING_RETEST:
+            board.current_status = Board.Status.WAITING_RETEST
+            board.save(update_fields=["current_status", "updated_at"])
+
+    elif status == RepairTicket.Status.CANCELLED:
+        if failure_case.failure_status != FailureCase.Status.INVALIDATED:
+            failure_case.failure_status = FailureCase.Status.INVALIDATED
+            failure_case.closed_at = ticket.closed_at
+            failure_case.save(update_fields=["failure_status", "closed_at", "updated_at"])
+
+        if board.current_status != Board.Status.HEALTHY:
+            board.current_status = Board.Status.HEALTHY
+            board.save(update_fields=["current_status", "updated_at"])
+
+    return ticket
 
 
 class RepairTicketViewSet(ModelViewSet):
@@ -41,11 +87,11 @@ class RepairTicketViewSet(ModelViewSet):
             board.current_status = Board.Status.IN_REPAIR
             board.save(update_fields=["current_status", "updated_at"])
 
-        apply_repair_ticket_workflow(ticket)
+        _apply_repair_ticket_workflow(ticket)
 
     def perform_update(self, serializer):
         ticket = serializer.save()
-        apply_repair_ticket_workflow(ticket)
+        _apply_repair_ticket_workflow(ticket)
 
 
 class RepairActionViewSet(ModelViewSet):
@@ -85,8 +131,8 @@ class RepairActionViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         repair_action = serializer.save(technician=self.request.user)
-        apply_repair_workflow(repair_action)
+        repair_services.apply_repair_workflow(repair_action)
 
     def perform_update(self, serializer):
         repair_action = serializer.save()
-        apply_repair_workflow(repair_action)
+        repair_services.apply_repair_workflow(repair_action)

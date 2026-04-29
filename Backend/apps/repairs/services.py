@@ -14,6 +14,10 @@ OPEN_TICKET_STATUSES = [
     RepairTicket.Status.IN_PROGRESS,
     RepairTicket.Status.WAITING_RETEST,
 ]
+REPAIR_CONFIRMED_TICKET_STATUSES = [
+    RepairTicket.Status.WAITING_RETEST,
+    RepairTicket.Status.CLOSED,
+]
 
 
 def _build_ticket_code(failure_case: FailureCase, cycle_number: int) -> str:
@@ -140,6 +144,57 @@ def apply_repair_workflow(repair_action: RepairAction) -> RepairAction:
 
 
 @transaction.atomic
+def apply_repair_ticket_workflow(repair_ticket: RepairTicket) -> RepairTicket:
+    failure_case = repair_ticket.failure_case
+    board = failure_case.board
+    status = repair_ticket.ticket_status
+
+    if status in [RepairTicket.Status.OPEN, RepairTicket.Status.IN_PROGRESS]:
+        if failure_case.failure_status not in [
+            FailureCase.Status.REPAIRED,
+            FailureCase.Status.INVALIDATED,
+        ]:
+            failure_case.failure_status = FailureCase.Status.IN_REPAIR
+            failure_case.save(update_fields=["failure_status", "updated_at"])
+
+        if board.current_status != Board.Status.IN_REPAIR:
+            board.current_status = Board.Status.IN_REPAIR
+            board.save(update_fields=["current_status", "updated_at"])
+
+    elif status == RepairTicket.Status.WAITING_RETEST:
+        if failure_case.failure_status not in [
+            FailureCase.Status.REPAIRED,
+            FailureCase.Status.INVALIDATED,
+        ]:
+            failure_case.failure_status = FailureCase.Status.WAITING_RETEST
+            failure_case.save(update_fields=["failure_status", "updated_at"])
+
+        if board.current_status != Board.Status.WAITING_RETEST:
+            board.current_status = Board.Status.WAITING_RETEST
+            board.save(update_fields=["current_status", "updated_at"])
+
+    elif status == RepairTicket.Status.CANCELLED:
+        if failure_case.failure_status != FailureCase.Status.INVALIDATED:
+            failure_case.failure_status = FailureCase.Status.INVALIDATED
+            failure_case.closed_at = repair_ticket.closed_at or timezone.now()
+            failure_case.save(update_fields=["failure_status", "closed_at", "updated_at"])
+
+        if board.current_status != Board.Status.HEALTHY:
+            board.current_status = Board.Status.HEALTHY
+            board.save(update_fields=["current_status", "updated_at"])
+
+    return repair_ticket
+
+
+def has_confirmed_repair_workflow(failure_case: FailureCase) -> bool:
+    return RepairTicket.objects.filter(
+        failure_case=failure_case,
+        ticket_status__in=REPAIR_CONFIRMED_TICKET_STATUSES,
+        repair_actions__isnull=False,
+    ).exists()
+
+
+@transaction.atomic
 def close_tickets_for_repaired_failure(failure_case: FailureCase, closed_at=None):
     closed_at = closed_at or timezone.now()
 
@@ -154,3 +209,18 @@ def close_tickets_for_repaired_failure(failure_case: FailureCase, closed_at=None
         if ticket.repair_effectiveness is None:
             ticket.repair_effectiveness = Decimal("100.00")
         ticket.save(update_fields=["ticket_status", "closed_at", "repair_effectiveness", "updated_at"])
+
+
+@transaction.atomic
+def cancel_tickets_for_invalidated_failure(failure_case: FailureCase, closed_at=None):
+    closed_at = closed_at or timezone.now()
+
+    tickets = RepairTicket.objects.filter(
+        failure_case=failure_case,
+        ticket_status__in=OPEN_TICKET_STATUSES,
+    )
+
+    for ticket in tickets:
+        ticket.ticket_status = RepairTicket.Status.CANCELLED
+        ticket.closed_at = closed_at
+        ticket.save(update_fields=["ticket_status", "closed_at", "updated_at"])
