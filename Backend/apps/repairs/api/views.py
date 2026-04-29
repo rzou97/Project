@@ -1,3 +1,5 @@
+from rest_framework import status
+from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from apps.boards.models import Board
@@ -5,7 +7,7 @@ from apps.failures.models import FailureCase
 from apps.repairs.filters import RepairActionFilter, RepairTicketFilter
 from apps.repairs.models import RepairAction, RepairTicket
 from apps.repairs.permission import RepairActionPermission
-from apps.repairs.services import apply_repair_workflow
+from apps.repairs.services import apply_repair_ticket_workflow, apply_repair_workflow
 from common.pagination import StandardResultsSetPagination
 
 from .serializers import RepairActionSerializer, RepairTicketSerializer
@@ -39,6 +41,12 @@ class RepairTicketViewSet(ModelViewSet):
             board.current_status = Board.Status.IN_REPAIR
             board.save(update_fields=["current_status", "updated_at"])
 
+        apply_repair_ticket_workflow(ticket)
+
+    def perform_update(self, serializer):
+        ticket = serializer.save()
+        apply_repair_ticket_workflow(ticket)
+
 
 class RepairActionViewSet(ModelViewSet):
     queryset = RepairAction.objects.select_related(
@@ -62,6 +70,18 @@ class RepairActionViewSet(ModelViewSet):
     ]
     ordering_fields = ["performed_at", "created_at", "updated_at"]
     ordering = ["-performed_at", "-id"]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        repair_action = (
+            self.get_queryset()
+            .get(pk=serializer.instance.pk)
+        )
+        response_serializer = self.get_serializer(repair_action)
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
     def perform_create(self, serializer):
         repair_action = serializer.save(technician=self.request.user)
