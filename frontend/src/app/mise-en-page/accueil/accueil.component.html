@@ -31,23 +31,23 @@
     <div class="failure-chart" *ngIf="topReferencesPannes().length > 0">
       <div class="chart-head">
         <div>
-          <h3>References les plus exposees</h3>
+          <h3>References avec le plus de produits en panne</h3>
           <p>Lecture sur l'etat physique actuel des produits, en retenant le dernier statut par SN.</p>
         </div>
-        <span class="chart-scale">Echelle relative au taux le plus eleve</span>
+        <span class="chart-scale">Vue en colonnes sur le nombre de produits en panne</span>
       </div>
 
-      <div class="chart-list">
-        <div class="chart-row" *ngFor="let item of topReferencesPannes()">
-          <div class="chart-meta">
-            <strong>{{ referenceLabel(item.internal_reference) }}</strong>
-            <small>{{ item.defective_sn }} / {{ item.total_sn }} en panne</small>
+      <div class="chart-columns">
+        <div class="chart-column" *ngFor="let item of topReferencesPannes()">
+          <div class="chart-column-value">{{ item.defective_sn }}</div>
+
+          <div class="chart-column-track">
+            <div class="chart-column-fill" [style.height]="chartColumnHeight(item)"></div>
           </div>
 
-          <div class="chart-track">
-            <div class="chart-bar" [style.width]="chartBarWidth(item)">
-              <span>{{ chartRateLabel(item) }}</span>
-            </div>
+          <div class="chart-column-meta">
+            <strong>{{ referenceLabel(item.internal_reference) }}</strong>
+            <small>{{ item.defective_sn }} / {{ item.total_sn }} en panne</small>
           </div>
         </div>
       </div>

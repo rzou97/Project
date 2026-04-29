@@ -28,11 +28,9 @@ export class AccueilComponent implements OnInit {
   topReferencesPannes = computed(() =>
     (this.tauxPannesActuel()?.references ?? []).slice(0, 10)
   );
-  maxChartRate = computed(() => {
-    const rates = this.topReferencesPannes().map((item) =>
-      this.toNumericRate(item.current_failure_rate)
-    );
-    return rates.length ? Math.max(...rates, 1) : 1;
+  maxChartDefectCount = computed(() => {
+    const counts = this.topReferencesPannes().map((item) => item.defective_sn);
+    return counts.length ? Math.max(...counts, 1) : 1;
   });
 
   ngOnInit(): void {
@@ -81,19 +79,9 @@ export class AccueilComponent implements OnInit {
     return cleaned || '-';
   }
 
-  chartBarWidth(item: TauxPanneActuelReferenceKpi): string {
-    const maxRate = this.maxChartRate();
-    const rate = this.toNumericRate(item.current_failure_rate);
-    const width = maxRate <= 0 ? 0 : (rate / maxRate) * 100;
-    return `${Math.max(width, 4)}%`;
-  }
-
-  chartRateLabel(item: TauxPanneActuelReferenceKpi): string {
-    return `${this.toNumericRate(item.current_failure_rate).toFixed(2)} %`;
-  }
-
-  private toNumericRate(value: number | string): number {
-    const numeric = typeof value === 'number' ? value : Number(value);
-    return Number.isFinite(numeric) ? numeric : 0;
+  chartColumnHeight(item: TauxPanneActuelReferenceKpi): string {
+    const maxCount = this.maxChartDefectCount();
+    const height = maxCount <= 0 ? 0 : (item.defective_sn / maxCount) * 100;
+    return `${Math.max(height, item.defective_sn > 0 ? 12 : 0)}%`;
   }
 }
