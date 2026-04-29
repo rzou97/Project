@@ -7,6 +7,8 @@ class RepairTicketSerializer(serializers.ModelSerializer):
     serial_number = serializers.CharField(source="failure_case.serial_number", read_only=True)
     client_reference = serializers.CharField(source="failure_case.client_reference", read_only=True)
     internal_reference = serializers.CharField(source="failure_case.internal_reference", read_only=True)
+    failure_type = serializers.CharField(source="failure_case.failure_type", read_only=True)
+    failure_message = serializers.CharField(source="failure_case.failure_message", read_only=True)
 
     class Meta:
         model = RepairTicket
@@ -16,6 +18,8 @@ class RepairTicketSerializer(serializers.ModelSerializer):
             "serial_number",
             "client_reference",
             "internal_reference",
+            "failure_type",
+            "failure_message",
             "ticket_code",
             "ticket_status",
             "cycle_number",
@@ -102,9 +106,16 @@ class RepairActionSerializer(serializers.ModelSerializer):
         if not repair_ticket and self.instance:
             repair_ticket = self.instance.repair_ticket
 
-        if repair_ticket and repair_ticket.ticket_status == RepairTicket.Status.CLOSED:
+        if repair_ticket and repair_ticket.ticket_status in [
+            RepairTicket.Status.CLOSED,
+            RepairTicket.Status.CANCELLED,
+        ]:
             raise serializers.ValidationError(
-                {"repair_ticket": "Impossible d'ajouter/modifier une action sur un ticket ferme."}
+                {
+                    "repair_ticket": (
+                        "Impossible d'ajouter/modifier une action sur un ticket ferme ou annule."
+                    )
+                }
             )
 
         if repair_ticket and "defect_type" in attrs and not attrs.get("defect_type"):

@@ -3,6 +3,8 @@ export interface TicketReparation {
   serial_number: string;
   client_reference: string | null;
   internal_reference: string | null;
+  failure_type: string | null;
+  failure_message: string | null;
   ticket_code: string;
   ticket_status: string;
   cycle_number: number;

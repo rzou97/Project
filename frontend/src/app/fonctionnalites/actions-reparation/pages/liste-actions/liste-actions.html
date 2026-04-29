@@ -8,6 +8,114 @@
   </header>
 
   <p class="erreur" *ngIf="erreur()">{{ erreur() }}</p>
+
+  <section class="section-card intervention-card" *ngIf="peutSaisirActions(); else lectureSeule">
+    <div class="intervention-header">
+      <div>
+        <h2>Intervention technicien</h2>
+        <p>
+          Enregistrez l'action effectuee sur un ticket. Utilisez le statut
+          <strong>WAITING_RETEST</strong> quand le produit est pret pour un nouveau test.
+        </p>
+      </div>
+    </div>
+
+    <p class="succes" *ngIf="succesAction()">{{ succesAction() }}</p>
+    <p class="erreur" *ngIf="erreurAction()">{{ erreurAction() }}</p>
+
+    <div class="ticket-context" *ngIf="ticketSelectionne() as ticket">
+      <p><strong>Ticket selectionne :</strong> {{ ticket.ticket_code }} • {{ ticket.serial_number }}</p>
+      <p><strong>Reference :</strong> {{ ticket.internal_reference || '-' }} • <strong>Type defaut :</strong> {{ ticket.failure_type || '-' }}</p>
+      <p><strong>Message :</strong> {{ ticket.failure_message || '-' }}</p>
+    </div>
+
+    <div class="filter-grid">
+      <div class="filter-field">
+        <label for="repair-ticket">Ticket</label>
+        <select id="repair-ticket" name="repair-ticket" [(ngModel)]="formulaireAction.repair_ticket">
+          <option [ngValue]="null">Selectionnez un ticket ouvert</option>
+          <option *ngFor="let ticket of ticketsIntervenables()" [ngValue]="ticket.id">
+            {{ libelleTicket(ticket) }}
+          </option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="repair-defect-type">Type defaut</label>
+        <input
+          id="repair-defect-type"
+          name="repair-defect-type"
+          type="text"
+          [(ngModel)]="formulaireAction.defect_type"
+          placeholder="Ex: POWERON"
+        />
+      </div>
+      <div class="filter-field">
+        <label for="repair-progress">Progression</label>
+        <select id="repair-progress" name="repair-progress" [(ngModel)]="formulaireAction.action_progress">
+          <option *ngFor="let statut of actionProgressStatuses" [value]="statut">{{ statut }}</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="repair-date">Date intervention</label>
+        <input
+          id="repair-date"
+          name="repair-date"
+          type="datetime-local"
+          [(ngModel)]="formulaireAction.performed_at"
+        />
+      </div>
+      <div class="filter-field filter-field-wide">
+        <label for="repair-observed">Defaut observe</label>
+        <textarea
+          id="repair-observed"
+          name="repair-observed"
+          rows="3"
+          [(ngModel)]="formulaireAction.observed_defect"
+          placeholder="Observation technicien"
+        ></textarea>
+      </div>
+      <div class="filter-field filter-field-wide">
+        <label for="repair-cause">Cause detectee</label>
+        <textarea
+          id="repair-cause"
+          name="repair-cause"
+          rows="3"
+          [(ngModel)]="formulaireAction.detected_cause"
+          placeholder="Cause racine identifiee"
+        ></textarea>
+      </div>
+      <div class="filter-field filter-field-full">
+        <label for="repair-action">Action realisee</label>
+        <textarea
+          id="repair-action"
+          name="repair-action"
+          rows="4"
+          [(ngModel)]="formulaireAction.action_taken"
+          placeholder="Ex: reprise soudure connecteur, remplacement composant, nettoyage..."
+        ></textarea>
+      </div>
+    </div>
+
+    <div class="filter-actions">
+      <button type="button" (click)="soumettreAction()" [disabled]="soumissionAction()">
+        {{ soumissionAction() ? 'Enregistrement...' : "Enregistrer l'intervention" }}
+      </button>
+      <button type="button" class="button-muted" (click)="reinitialiserFormulaireAction()" [disabled]="soumissionAction()">
+        Reinitialiser
+      </button>
+    </div>
+  </section>
+
+  <ng-template #lectureSeule>
+    <section class="section-card intervention-card intervention-card-readonly">
+      <h2>Intervention technicien</h2>
+      <p>
+        Connectez-vous avec un compte <strong>ADMIN</strong> ou
+        <strong>REPAIR_TECHNICIAN</strong> pour saisir des actions de reparation depuis l'application.
+      </p>
+    </section>
+  </ng-template>
+
   <section class="section-card">
     <h2>Repair Tickets</h2>
 
@@ -64,23 +172,37 @@
             <th>Ticket</th>
             <th>SN</th>
             <th>Ref Interne</th>
+            <th>Type Defaut</th>
             <th>Statut</th>
             <th>Cycle</th>
             <th>Ouvert le</th>
             <th>Ferme le</th>
             <th>Efficacite</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let ticket of tickets()">
+          <tr *ngFor="let ticket of tickets()" [class.selected-row]="formulaireAction.repair_ticket === ticket.id">
             <td>{{ ticket.ticket_code }}</td>
             <td>{{ ticket.serial_number }}</td>
             <td>{{ ticket.internal_reference || '-' }}</td>
+            <td>{{ ticket.failure_type || '-' }}</td>
             <td><span class="status-badge" [attr.data-status]="ticket.ticket_status">{{ ticket.ticket_status }}</span></td>
             <td>{{ ticket.cycle_number }}</td>
             <td>{{ ticket.opened_at | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
             <td>{{ ticket.closed_at ? (ticket.closed_at | date: 'yyyy-MM-dd HH:mm:ss') : '-' }}</td>
             <td>{{ ticket.repair_effectiveness ?? '-' }}</td>
+            <td>
+              <button
+                *ngIf="peutSaisirActions() && ticket.ticket_status !== 'CLOSED' && ticket.ticket_status !== 'CANCELLED'; else ticketIndisponible"
+                type="button"
+                class="button-muted action-inline"
+                (click)="selectionnerTicket(ticket)"
+              >
+                Intervenir
+              </button>
+              <ng-template #ticketIndisponible>-</ng-template>
+            </td>
           </tr>
         </tbody>
       </table>

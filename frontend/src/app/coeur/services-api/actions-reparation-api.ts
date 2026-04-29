@@ -30,6 +30,16 @@ export interface ActionListQuery {
   ordering?: string;
 }
 
+export interface CreateRepairActionPayload {
+  repair_ticket: number;
+  defect_type?: string;
+  observed_defect?: string;
+  detected_cause?: string;
+  action_taken: string;
+  action_progress: string;
+  performed_at: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -66,5 +76,9 @@ export class ActionsReparationApi {
         }),
       })
       .pipe(map((payload) => normalizePaginatedResponse(payload, page, pageSize)));
+  }
+
+  creerAction(payload: CreateRepairActionPayload): Observable<ActionReparation> {
+    return this.http.post<ActionReparation>(API_ENDPOINTS.actionsReparation, payload);
   }
 }

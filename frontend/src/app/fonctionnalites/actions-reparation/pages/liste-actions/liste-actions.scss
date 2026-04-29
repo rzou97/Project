@@ -1,0 +1,68 @@
+.intervention-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.intervention-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: start;
+}
+
+.intervention-header h2 {
+  margin-bottom: 0.25rem;
+}
+
+.intervention-header p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.intervention-card-readonly p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.ticket-context {
+  padding: 0.9rem 1rem;
+  border-radius: 0.85rem;
+  background: rgba(9, 20, 43, 0.05);
+  border: 1px solid rgba(9, 20, 43, 0.09);
+}
+
+.ticket-context p {
+  margin: 0;
+}
+
+.ticket-context p + p {
+  margin-top: 0.35rem;
+}
+
+.filter-field-wide {
+  grid-column: span 2;
+}
+
+.filter-field-full {
+  grid-column: 1 / -1;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 5.75rem;
+}
+
+.selected-row {
+  background: rgba(36, 90, 163, 0.08);
+}
+
+.action-inline {
+  min-width: 7.5rem;
+}
+
+@media (max-width: 920px) {
+  .filter-field-wide,
+  .filter-field-full {
+    grid-column: auto;
+  }
+}
