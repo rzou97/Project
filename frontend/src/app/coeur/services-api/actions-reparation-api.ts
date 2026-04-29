@@ -11,7 +11,9 @@ import {
 } from './api-base';
 
 export interface TicketListQuery {
+  failure_case?: number;
   serial_number?: string;
+  client_reference?: string;
   internal_reference?: string;
   ticket_code?: string;
   ticket_status?: string;
@@ -21,7 +23,10 @@ export interface TicketListQuery {
 }
 
 export interface ActionListQuery {
+  repair_ticket?: number;
   serial_number?: string;
+  client_reference?: string;
+  internal_reference?: string;
   ticket_code?: string;
   defect_type?: string;
   action_progress?: string;
@@ -38,6 +43,12 @@ export interface CreateRepairActionPayload {
   action_taken: string;
   action_progress: string;
   performed_at: string;
+}
+
+export interface UpdateRepairTicketPayload {
+  ticket_status: string;
+  closed_at?: string | null;
+  repair_effectiveness?: number | null;
 }
 
 @Injectable({
@@ -62,6 +73,10 @@ export class ActionsReparationApi {
       .pipe(map((payload) => normalizePaginatedResponse(payload, page, pageSize)));
   }
 
+  obtenirTicket(ticketId: number): Observable<TicketReparation> {
+    return this.http.get<TicketReparation>(`${API_ENDPOINTS.ticketsReparation}${ticketId}/`);
+  }
+
   listerActions(query: ActionListQuery = {}): Observable<ApiPage<ActionReparation>> {
     const page = query.page ?? 1;
     const pageSize = query.page_size ?? 8;
@@ -80,5 +95,12 @@ export class ActionsReparationApi {
 
   creerAction(payload: CreateRepairActionPayload): Observable<ActionReparation> {
     return this.http.post<ActionReparation>(API_ENDPOINTS.actionsReparation, payload);
+  }
+
+  mettreAJourTicket(
+    ticketId: number,
+    payload: UpdateRepairTicketPayload
+  ): Observable<TicketReparation> {
+    return this.http.patch<TicketReparation>(`${API_ENDPOINTS.ticketsReparation}${ticketId}/`, payload);
   }
 }

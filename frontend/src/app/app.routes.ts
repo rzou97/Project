@@ -44,12 +44,24 @@ export const routes: Routes = [
       },
 
       {
+        path: `${ROUTE_PATHS.gestionPannes}/:failureId`,
+        loadComponent: () =>
+          import('./fonctionnalites/gestion-pannes/pages/detail-panne/detail-panne')
+            .then(m => m.DetailPanne),
+      },
+      {
         path: ROUTE_PATHS.gestionPannes,
         loadComponent: () =>
           import('./fonctionnalites/gestion-pannes/pages/liste-pannes/liste-pannes')
             .then(m => m.ListePannes),
       },
 
+      {
+        path: `${ROUTE_PATHS.actionsReparation}/:ticketId`,
+        loadComponent: () =>
+          import('./fonctionnalites/actions-reparation/pages/fiche-reparation/fiche-reparation')
+            .then(m => m.FicheReparation),
+      },
       {
         path: ROUTE_PATHS.actionsReparation,
         loadComponent: () =>

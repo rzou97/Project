@@ -1,10 +1,15 @@
 export interface TicketReparation {
   id: number;
+  failure_case: number;
   serial_number: string;
   client_reference: string | null;
   internal_reference: string | null;
+  failure_status: string | null;
+  detected_in_phase: string | null;
+  detected_on_tester: string | null;
   failure_type: string | null;
   failure_message: string | null;
+  board_status: string | null;
   ticket_code: string;
   ticket_status: string;
   cycle_number: number;
@@ -17,6 +22,11 @@ export interface ActionReparation {
   id: number;
   ticket_code?: string | null;
   serial_number?: string | null;
+  client_reference?: string | null;
+  internal_reference?: string | null;
+  failure_status?: string | null;
+  failure_message?: string | null;
+  ticket_status?: string | null;
   defect_type: string | null;
   observed_defect: string | null;
   detected_cause: string | null;

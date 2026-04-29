@@ -1,0 +1,29 @@
+.detail-page {
+  gap: 1.25rem;
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.rule-list {
+  margin: 0;
+  padding-left: 1.15rem;
+  display: grid;
+  gap: 0.75rem;
+  color: var(--text-dark);
+}
+
+.rule-list li {
+  color: var(--text-dark);
+}
+
+@media (max-width: 920px) {
+  .hero-actions {
+    justify-content: flex-start;
+  }
+}

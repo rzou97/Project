@@ -1,1 +1,261 @@
-<p>fiche-reparation works!</p>
+<section class="module-page detail-page">
+  <a class="back-link" [routerLink]="['/', paths.actionsReparation]">Retour aux tickets de reparation</a>
+
+  <p class="erreur" *ngIf="erreur()">{{ erreur() }}</p>
+
+  <ng-container *ngIf="ticket() as ticket; else pendingState">
+    <section class="hero-card">
+      <div class="hero-header">
+        <div class="hero-copy">
+          <p class="hero-eyebrow">Fiche ticket</p>
+          <h1>{{ ticket.ticket_code }}</h1>
+          <p>
+            {{ ticket.serial_number }} - {{ ticket.internal_reference || '-' }} - cycle {{ ticket.cycle_number }}
+          </p>
+        </div>
+
+        <div class="hero-actions">
+          <span class="status-badge" [attr.data-status]="ticket.ticket_status">{{ ticket.ticket_status }}</span>
+          <button type="button" class="button-muted" (click)="recharger()">Rafraichir</button>
+          <button type="button" *ngIf="peutPrendreEnCharge()" (click)="prendreEnCharge()" [disabled]="miseAJourTicket()">
+            {{ miseAJourTicket() ? 'Mise a jour...' : 'Prendre en charge' }}
+          </button>
+          <button
+            type="button"
+            class="button-danger"
+            *ngIf="peutAnnulerTicket()"
+            (click)="annulerTicket()"
+            [disabled]="miseAJourTicket()"
+          >
+            Annuler le ticket
+          </button>
+        </div>
+      </div>
+
+      <div class="metric-strip">
+        <article class="metric-card">
+          <span class="metric-label">Statut panne</span>
+          <strong class="metric-value">{{ ticket.failure_status || '-' }}</strong>
+        </article>
+        <article class="metric-card">
+          <span class="metric-label">Phase detectee</span>
+          <strong class="metric-value">{{ ticket.detected_in_phase || '-' }}</strong>
+        </article>
+        <article class="metric-card">
+          <span class="metric-label">Testeur source</span>
+          <strong class="metric-value">{{ ticket.detected_on_tester || '-' }}</strong>
+        </article>
+        <article class="metric-card">
+          <span class="metric-label">Actions enregistrees</span>
+          <strong class="metric-value">{{ actionCount() }}</strong>
+        </article>
+      </div>
+
+      <div class="quick-links">
+        <a class="link-chip" [routerLink]="['/', paths.cartes, ticket.serial_number]">Voir la carte</a>
+        <a class="link-chip" [routerLink]="['/', paths.gestionPannes, ticket.failure_case]">Voir la panne</a>
+      </div>
+    </section>
+
+    <div class="workspace-grid">
+      <div class="workspace-stack">
+        <section class="section-card">
+          <div class="section-heading">
+            <div>
+              <h2>Contexte panne</h2>
+              <p>Le ticket reste rattache a la panne physique d'origine. On garde ici les informations utiles au diagnostic et au retest.</p>
+            </div>
+          </div>
+
+          <div class="detail-grid">
+            <div class="detail-item">
+              <span class="detail-label">Reference client</span>
+              <strong class="detail-value">{{ ticket.client_reference || '-' }}</strong>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Reference interne</span>
+              <strong class="detail-value">{{ ticket.internal_reference || '-' }}</strong>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Type de defaut</span>
+              <strong class="detail-value">{{ ticket.failure_type || '-' }}</strong>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Statut carte</span>
+              <strong class="detail-value">{{ ticket.board_status || '-' }}</strong>
+            </div>
+            <div class="detail-item detail-item-wide">
+              <span class="detail-label">Message de panne</span>
+              <strong class="detail-value">{{ ticket.failure_message || '-' }}</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-card" *ngIf="peutSaisirActions(); else readOnlyRepair">
+          <div class="section-heading">
+            <div>
+              <h2>Intervention technicien</h2>
+              <p>Saisissez ce qui a ete observe et fait sur le produit. Utilisez <strong>WAITING_RETEST</strong> quand le produit est pret pour un nouveau test.</p>
+            </div>
+          </div>
+
+          <p class="succes" *ngIf="succesAction()">{{ succesAction() }}</p>
+          <p class="erreur" *ngIf="erreurAction()">{{ erreurAction() }}</p>
+
+          <div class="filter-grid">
+            <div class="filter-field">
+              <label for="repair-defect-type">Type defaut</label>
+              <input
+                id="repair-defect-type"
+                name="repair-defect-type"
+                type="text"
+                [(ngModel)]="formulaireAction.defect_type"
+                placeholder="Ex: PRIMARY"
+              />
+            </div>
+            <div class="filter-field">
+              <label for="repair-progress">Progression</label>
+              <select id="repair-progress" name="repair-progress" [(ngModel)]="formulaireAction.action_progress">
+                <option *ngFor="let statut of actionProgressStatuses" [value]="statut">{{ statut }}</option>
+              </select>
+            </div>
+            <div class="filter-field">
+              <label for="repair-date">Date intervention</label>
+              <input
+                id="repair-date"
+                name="repair-date"
+                type="datetime-local"
+                [(ngModel)]="formulaireAction.performed_at"
+              />
+            </div>
+            <div class="filter-field filter-field-wide">
+              <label for="repair-observed">Defaut observe</label>
+              <textarea
+                id="repair-observed"
+                name="repair-observed"
+                rows="3"
+                [(ngModel)]="formulaireAction.observed_defect"
+                placeholder="Observation du technicien"
+              ></textarea>
+            </div>
+            <div class="filter-field filter-field-wide">
+              <label for="repair-cause">Cause detectee</label>
+              <textarea
+                id="repair-cause"
+                name="repair-cause"
+                rows="3"
+                [(ngModel)]="formulaireAction.detected_cause"
+                placeholder="Cause racine ou hypothese retenue"
+              ></textarea>
+            </div>
+            <div class="filter-field filter-field-full">
+              <label for="repair-action">Action realisee</label>
+              <textarea
+                id="repair-action"
+                name="repair-action"
+                rows="4"
+                [(ngModel)]="formulaireAction.action_taken"
+                placeholder="Ex: remplacement composant, reprise soudure, nettoyage, reglages..."
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="filter-actions">
+            <button type="button" (click)="soumettreAction()" [disabled]="soumissionAction()">
+              {{ soumissionAction() ? 'Enregistrement...' : "Enregistrer l'intervention" }}
+            </button>
+            <button type="button" class="button-muted" (click)="reinitialiserFormulaireAction()" [disabled]="soumissionAction()">
+              Reinitialiser
+            </button>
+          </div>
+        </section>
+
+        <ng-template #readOnlyRepair>
+          <section class="section-card">
+            <h2>Intervention technicien</h2>
+            <p>
+              Connectez-vous avec un compte <strong>ADMIN</strong> ou <strong>REPAIR_TECHNICIAN</strong>
+              pour enregistrer une intervention depuis cette fiche.
+            </p>
+          </section>
+        </ng-template>
+
+        <section class="section-card">
+          <div class="section-heading">
+            <div>
+              <h2>Historique des actions</h2>
+              <p>Toutes les actions enregistrees sur ce ticket, dans l'ordre inverse des interventions.</p>
+            </div>
+          </div>
+
+          <p *ngIf="chargementActions()">Chargement de l'historique...</p>
+
+          <div class="table-shell" *ngIf="!chargementActions() && actions().length > 0; else noHistory">
+            <table>
+              <thead>
+                <tr>
+                  <th>Progression</th>
+                  <th>Defaut observe</th>
+                  <th>Cause detectee</th>
+                  <th>Action</th>
+                  <th>Technicien</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let action of actions()">
+                  <td><span class="status-badge" [attr.data-status]="action.action_progress">{{ action.action_progress || '-' }}</span></td>
+                  <td>{{ action.observed_defect || '-' }}</td>
+                  <td>{{ action.detected_cause || '-' }}</td>
+                  <td>{{ action.action_taken || '-' }}</td>
+                  <td>{{ action.technician_matricule || '-' }}</td>
+                  <td>{{ action.performed_at ? (action.performed_at | date: 'yyyy-MM-dd HH:mm:ss') : '-' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <ng-template #noHistory>
+            <p class="empty-state" *ngIf="!chargementActions()">Aucune action n'a encore ete enregistree sur ce ticket.</p>
+          </ng-template>
+        </section>
+      </div>
+
+      <aside class="workspace-aside">
+        <section class="section-card">
+          <h2>Repere operationnel</h2>
+          <div class="detail-list">
+            <div class="detail-item">
+              <span class="detail-label">Ouvert le</span>
+              <strong class="detail-value">{{ ticket.opened_at | date: 'yyyy-MM-dd HH:mm:ss' }}</strong>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Ferme le</span>
+              <strong class="detail-value">{{ ticket.closed_at ? (ticket.closed_at | date: 'yyyy-MM-dd HH:mm:ss') : '-' }}</strong>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Efficacite</span>
+              <strong class="detail-value">{{ ticket.repair_effectiveness ?? '-' }}</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-card">
+          <h2>Regles de cloture</h2>
+          <ul class="rule-list">
+            <li>Un ticket ne doit passer en <strong>REPAIRED</strong> qu'apres intervention technicien et retest PASS.</li>
+            <li>Un PASS sans action technicien doit reclasser le cas en <strong>INVALIDATED</strong>.</li>
+            <li>Le statut <strong>WAITING_RETEST</strong> sert de point de passage avant le retour sur banc.</li>
+          </ul>
+        </section>
+      </aside>
+    </div>
+  </ng-container>
+
+  <ng-template #pendingState>
+    <section class="section-card">
+      <p class="empty-state" *ngIf="chargementTicket()">Chargement de la fiche ticket...</p>
+      <p class="empty-state" *ngIf="!chargementTicket() && !erreur()">Ticket introuvable ou inaccessible.</p>
+    </section>
+  </ng-template>
+</section>

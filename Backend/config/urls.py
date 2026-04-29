@@ -33,7 +33,6 @@ urlpatterns = [
     path("api/test-results/", include("apps.testresults.urls")),
     path("api/failure-cases/", include("apps.failures.urls")),
     path("api/repairs/", include("apps.repairs.urls")),
-    path("api/repair-actions/", include("apps.repairs.urls")),
     path("api/pdr/", include("apps.pdr.urls")),
     path("api/maintenance/", include("apps.maintenance.urls")),
     path("api/alerts/", include("apps.alerts.urls")),

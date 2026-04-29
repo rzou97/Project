@@ -12,55 +12,6 @@ from common.pagination import StandardResultsSetPagination
 
 from .serializers import RepairActionSerializer, RepairTicketSerializer
 
-FAILURE_STATUS_INVALIDATED = getattr(FailureCase.Status, "INVALIDATED", "INVALIDATED")
-TICKET_STATUS_CANCELLED = getattr(RepairTicket.Status, "CANCELLED", "CANCELLED")
-
-
-def _apply_repair_ticket_workflow(ticket: RepairTicket) -> RepairTicket:
-    workflow = getattr(repair_services, "apply_repair_ticket_workflow", None)
-    if workflow:
-        return workflow(ticket)
-
-    failure_case = ticket.failure_case
-    board = failure_case.board
-    status = ticket.ticket_status
-
-    if status in [RepairTicket.Status.OPEN, RepairTicket.Status.IN_PROGRESS]:
-        if failure_case.failure_status not in [
-            FailureCase.Status.REPAIRED,
-            FAILURE_STATUS_INVALIDATED,
-        ]:
-            failure_case.failure_status = FailureCase.Status.IN_REPAIR
-            failure_case.save(update_fields=["failure_status", "updated_at"])
-
-        if board.current_status != Board.Status.IN_REPAIR:
-            board.current_status = Board.Status.IN_REPAIR
-            board.save(update_fields=["current_status", "updated_at"])
-
-    elif status == RepairTicket.Status.WAITING_RETEST:
-        if failure_case.failure_status not in [
-            FailureCase.Status.REPAIRED,
-            FAILURE_STATUS_INVALIDATED,
-        ]:
-            failure_case.failure_status = FailureCase.Status.WAITING_RETEST
-            failure_case.save(update_fields=["failure_status", "updated_at"])
-
-        if board.current_status != Board.Status.WAITING_RETEST:
-            board.current_status = Board.Status.WAITING_RETEST
-            board.save(update_fields=["current_status", "updated_at"])
-
-    elif status == TICKET_STATUS_CANCELLED:
-        if failure_case.failure_status != FAILURE_STATUS_INVALIDATED:
-            failure_case.failure_status = FAILURE_STATUS_INVALIDATED
-            failure_case.closed_at = ticket.closed_at
-            failure_case.save(update_fields=["failure_status", "closed_at", "updated_at"])
-
-        if board.current_status != Board.Status.HEALTHY:
-            board.current_status = Board.Status.HEALTHY
-            board.save(update_fields=["current_status", "updated_at"])
-
-    return ticket
-
 
 class RepairTicketViewSet(ModelViewSet):
     queryset = RepairTicket.objects.select_related("failure_case", "failure_case__board").all()
@@ -90,11 +41,11 @@ class RepairTicketViewSet(ModelViewSet):
             board.current_status = Board.Status.IN_REPAIR
             board.save(update_fields=["current_status", "updated_at"])
 
-        _apply_repair_ticket_workflow(ticket)
+        repair_services.apply_repair_ticket_workflow(ticket)
 
     def perform_update(self, serializer):
         ticket = serializer.save()
-        _apply_repair_ticket_workflow(ticket)
+        repair_services.apply_repair_ticket_workflow(ticket)
 
 
 class RepairActionViewSet(ModelViewSet):

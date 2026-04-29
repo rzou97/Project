@@ -1,1 +1,192 @@
-<p>detail-panne works!</p>
+<section class="module-page detail-page">
+  <a class="back-link" [routerLink]="['/', paths.gestionPannes]">Retour aux pannes</a>
+
+  <p class="erreur" *ngIf="erreur()">{{ erreur() }}</p>
+
+  <ng-container *ngIf="panne() as panne; else pendingState">
+    <section class="hero-card">
+      <div class="hero-header">
+        <div class="hero-copy">
+          <p class="hero-eyebrow">Failure case</p>
+          <h1>{{ panne.serial_number }}</h1>
+          <p>{{ panne.internal_reference || '-' }} - {{ panne.detected_in_phase || '-' }} - {{ panne.detected_on_tester || '-' }}</p>
+        </div>
+
+        <div class="hero-actions">
+          <span class="status-badge" [attr.data-status]="panne.failure_status">{{ panne.failure_status }}</span>
+          <a class="link-chip" [routerLink]="['/', paths.cartes, panne.serial_number]">Voir la carte</a>
+        </div>
+      </div>
+
+      <div class="metric-strip">
+        <article class="metric-card">
+          <span class="metric-label">Tickets associes</span>
+          <strong class="metric-value">{{ tickets().length }}</strong>
+        </article>
+        <article class="metric-card">
+          <span class="metric-label">Ticket actif</span>
+          <strong class="metric-value">{{ ticketActif()?.ticket_code || '-' }}</strong>
+        </article>
+        <article class="metric-card">
+          <span class="metric-label">Dernier resultat test</span>
+          <strong class="metric-value">{{ dernierMouvement()?.result || '-' }}</strong>
+        </article>
+        <article class="metric-card">
+          <span class="metric-label">Ouverte le</span>
+          <strong class="metric-value">{{ panne.opened_at | date: 'yyyy-MM-dd HH:mm:ss' }}</strong>
+        </article>
+      </div>
+    </section>
+
+    <div class="workspace-grid">
+      <div class="workspace-stack">
+        <section class="section-card">
+          <div class="section-heading">
+            <div>
+              <h2>Diagnostic initial</h2>
+              <p>Les informations ci-dessous proviennent du test qui a ouvert la panne et servent de reference pour tout le cycle de reparation.</p>
+            </div>
+          </div>
+
+          <div class="detail-grid">
+            <div class="detail-item">
+              <span class="detail-label">Reference client</span>
+              <strong class="detail-value">{{ panne.client_reference || '-' }}</strong>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Reference interne</span>
+              <strong class="detail-value">{{ panne.internal_reference || '-' }}</strong>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Phase detectee</span>
+              <strong class="detail-value">{{ panne.detected_in_phase || '-' }}</strong>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Testeur source</span>
+              <strong class="detail-value">{{ panne.detected_on_tester || '-' }}</strong>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Type de defaut</span>
+              <strong class="detail-value">{{ panne.failure_type || '-' }}</strong>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Fermee le</span>
+              <strong class="detail-value">{{ panne.closed_at ? (panne.closed_at | date: 'yyyy-MM-dd HH:mm:ss') : '-' }}</strong>
+            </div>
+            <div class="detail-item detail-item-wide">
+              <span class="detail-label">Message de panne</span>
+              <strong class="detail-value">{{ panne.failure_message || '-' }}</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-card">
+          <div class="section-heading">
+            <div>
+              <h2>Tickets lies</h2>
+              <p>Un historique propre des interventions creees autour de cette panne, avec acces direct a chaque fiche ticket.</p>
+            </div>
+          </div>
+
+          <div class="table-shell" *ngIf="tickets().length > 0; else noTickets">
+            <table>
+              <thead>
+                <tr>
+                  <th>Ticket</th>
+                  <th>Statut</th>
+                  <th>Cycle</th>
+                  <th>Ouvert le</th>
+                  <th>Ferme le</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let ticket of tickets()">
+                  <td>{{ ticket.ticket_code }}</td>
+                  <td><span class="status-badge" [attr.data-status]="ticket.ticket_status">{{ ticket.ticket_status }}</span></td>
+                  <td>{{ ticket.cycle_number }}</td>
+                  <td>{{ ticket.opened_at | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
+                  <td>{{ ticket.closed_at ? (ticket.closed_at | date: 'yyyy-MM-dd HH:mm:ss') : '-' }}</td>
+                  <td>
+                    <a class="table-link-button" [routerLink]="['/', paths.actionsReparation, ticket.id]">
+                      Ouvrir la fiche
+                    </a>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <ng-template #noTickets>
+            <p class="empty-state">Aucun ticket de reparation n'est encore rattache a cette panne.</p>
+          </ng-template>
+        </section>
+
+        <section class="section-card">
+          <div class="section-heading">
+            <div>
+              <h2>Derniers mouvements de test</h2>
+              <p>Une lecture rapide des derniers passages du SN sur les bancs, utile pour distinguer une vraie panne d'une reprise simple.</p>
+            </div>
+            <a class="link-chip" [routerLink]="['/', paths.cartes, panne.serial_number]">Historique complet du SN</a>
+          </div>
+
+          <div class="table-shell" *ngIf="mouvements().length > 0; else noMovements">
+            <table>
+              <thead>
+                <tr>
+                  <th>Resultat</th>
+                  <th>Phase</th>
+                  <th>Testeur</th>
+                  <th>Type</th>
+                  <th>Message</th>
+                  <th>Teste le</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let mouvement of mouvements()">
+                  <td><span class="status-badge" [attr.data-status]="mouvement.result">{{ mouvement.result }}</span></td>
+                  <td>{{ mouvement.test_phase || '-' }}</td>
+                  <td>{{ mouvement.tester_id || '-' }}</td>
+                  <td>{{ mouvement.failure_type || '-' }}</td>
+                  <td>{{ mouvement.failure_message || '-' }}</td>
+                  <td>{{ mouvement.tested_at | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <ng-template #noMovements>
+            <p class="empty-state">Aucun mouvement de test recent n'a ete retrouve pour ce SN.</p>
+          </ng-template>
+        </section>
+      </div>
+
+      <aside class="workspace-aside">
+        <section class="section-card">
+          <h2>Lecture metier</h2>
+          <ul class="rule-list">
+            <li>Le statut actuel correspond au dernier etat physique connu du produit.</li>
+            <li>Une panne retestee OK sans action technicien doit etre consideree comme invalidee.</li>
+            <li>Les tickets sont les briques d'intervention, pas le compteur de pieces defectueuses.</li>
+          </ul>
+        </section>
+
+        <section class="section-card" *ngIf="ticketActif() as ticket">
+          <h2>Ticket actif</h2>
+          <p>Le ticket suivant demande encore une action ou un retest.</p>
+          <a class="table-link-button" [routerLink]="['/', paths.actionsReparation, ticket.id]">
+            {{ ticket.ticket_code }}
+          </a>
+        </section>
+      </aside>
+    </div>
+  </ng-container>
+
+  <ng-template #pendingState>
+    <section class="section-card">
+      <p class="empty-state" *ngIf="chargement()">Chargement du detail de panne...</p>
+      <p class="empty-state" *ngIf="!chargement() && !erreur()">Panne introuvable ou inaccessible.</p>
+    </section>
+  </ng-template>
+</section>

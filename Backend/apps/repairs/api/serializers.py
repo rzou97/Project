@@ -9,8 +9,12 @@ class RepairTicketSerializer(serializers.ModelSerializer):
     serial_number = serializers.CharField(source="failure_case.serial_number", read_only=True)
     client_reference = serializers.CharField(source="failure_case.client_reference", read_only=True)
     internal_reference = serializers.CharField(source="failure_case.internal_reference", read_only=True)
+    failure_status = serializers.CharField(source="failure_case.failure_status", read_only=True)
+    detected_in_phase = serializers.CharField(source="failure_case.detected_in_phase", read_only=True)
+    detected_on_tester = serializers.CharField(source="failure_case.detected_on_tester", read_only=True)
     failure_type = serializers.CharField(source="failure_case.failure_type", read_only=True)
     failure_message = serializers.CharField(source="failure_case.failure_message", read_only=True)
+    board_status = serializers.CharField(source="failure_case.board.current_status", read_only=True)
 
     class Meta:
         model = RepairTicket
@@ -20,8 +24,12 @@ class RepairTicketSerializer(serializers.ModelSerializer):
             "serial_number",
             "client_reference",
             "internal_reference",
+            "failure_status",
+            "detected_in_phase",
+            "detected_on_tester",
             "failure_type",
             "failure_message",
+            "board_status",
             "ticket_code",
             "ticket_status",
             "cycle_number",
@@ -74,6 +82,11 @@ class RepairActionSerializer(serializers.ModelSerializer):
     ticket_code = serializers.CharField(source="repair_ticket.ticket_code", read_only=True)
     technician_matricule = serializers.CharField(source="technician.matricule", read_only=True)
     serial_number = serializers.CharField(source="repair_ticket.failure_case.serial_number", read_only=True)
+    client_reference = serializers.CharField(source="repair_ticket.failure_case.client_reference", read_only=True)
+    internal_reference = serializers.CharField(source="repair_ticket.failure_case.internal_reference", read_only=True)
+    failure_status = serializers.CharField(source="repair_ticket.failure_case.failure_status", read_only=True)
+    failure_message = serializers.CharField(source="repair_ticket.failure_case.failure_message", read_only=True)
+    ticket_status = serializers.CharField(source="repair_ticket.ticket_status", read_only=True)
 
     class Meta:
         model = RepairAction
@@ -82,6 +95,11 @@ class RepairActionSerializer(serializers.ModelSerializer):
             "repair_ticket",
             "ticket_code",
             "serial_number",
+            "client_reference",
+            "internal_reference",
+            "failure_status",
+            "failure_message",
+            "ticket_status",
             "technician",
             "technician_matricule",
             "defect_type",

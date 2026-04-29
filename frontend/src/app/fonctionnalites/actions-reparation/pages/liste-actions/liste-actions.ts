@@ -1,46 +1,51 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import {
   ActionReparation,
   TicketReparation,
 } from '../../../../coeur/modeles/action-reparation.model';
-import { SessionService } from '../../../../coeur/auth/session.service';
+import { ROUTE_PATHS } from '../../../../coeur/constantes/routes.const';
 import {
   ActionListQuery,
   ActionsReparationApi,
-  CreateRepairActionPayload,
   TicketListQuery,
 } from '../../../../coeur/services-api/actions-reparation-api';
 
 @Component({
   selector: 'app-liste-actions',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './liste-actions.html',
   styleUrl: './liste-actions.scss',
 })
 export class ListeActions implements OnInit {
   private readonly actionsReparationApi = inject(ActionsReparationApi);
-  private readonly sessionService = inject(SessionService);
 
+  readonly paths = ROUTE_PATHS;
   readonly ticketStatuses = ['OPEN', 'IN_PROGRESS', 'WAITING_RETEST', 'CLOSED', 'CANCELLED'];
   readonly actionProgressStatuses = ['PENDING', 'IN_PROGRESS', 'DONE', 'WAITING_PARTS', 'WAITING_RETEST'];
   readonly pageSizeOptions = [5, 10, 25];
-  readonly peutSaisirActions = computed(() => {
-    const role = this.sessionService.utilisateur()?.role;
-    return role === 'ADMIN' || role === 'REPAIR_TECHNICIAN' || role === 'TECHNICIEN';
-  });
-  readonly ticketsIntervenables = computed(() =>
-    this.tickets().filter((ticket) => !['CLOSED', 'CANCELLED'].includes(ticket.ticket_status))
+
+  readonly ticketsActifs = computed(() =>
+    this.tickets().filter((ticket) => ['OPEN', 'IN_PROGRESS'].includes(ticket.ticket_status)).length
+  );
+  readonly ticketsEnRetest = computed(() =>
+    this.tickets().filter((ticket) => ticket.ticket_status === 'WAITING_RETEST').length
+  );
+  readonly ticketsClosOuAnnules = computed(() =>
+    this.tickets().filter((ticket) => ['CLOSED', 'CANCELLED'].includes(ticket.ticket_status)).length
+  );
+  readonly actionsEnCours = computed(() =>
+    this.actions().filter((action) =>
+      ['PENDING', 'IN_PROGRESS', 'WAITING_PARTS'].includes(action.action_progress ?? '')
+    ).length
   );
 
   chargementTickets = signal(true);
   chargementActions = signal(true);
-  soumissionAction = signal(false);
   erreur = signal('');
-  erreurAction = signal('');
-  succesAction = signal('');
   tickets = signal<TicketReparation[]>([]);
   actions = signal<ActionReparation[]>([]);
   totalTickets = signal(0);
@@ -66,8 +71,6 @@ export class ListeActions implements OnInit {
     action_progress: '',
     page_size: 5,
   };
-
-  formulaireAction = this.creerFormulaireAction();
 
   ngOnInit(): void {
     this.chargerDonnees();
@@ -101,7 +104,7 @@ export class ListeActions implements OnInit {
         this.chargementTickets.set(false);
       },
       error: () => {
-        this.erreur.set('Impossible de charger les tickets et actions de reparation.');
+        this.erreur.set('Impossible de charger les tickets de reparation.');
         this.chargementTickets.set(false);
       },
     });
@@ -129,7 +132,7 @@ export class ListeActions implements OnInit {
         this.chargementActions.set(false);
       },
       error: () => {
-        this.erreur.set('Impossible de charger les tickets et actions de reparation.');
+        this.erreur.set("Impossible de charger l'historique des actions.");
         this.chargementActions.set(false);
       },
     });
@@ -211,149 +214,8 @@ export class ListeActions implements OnInit {
     return Math.min(this.pageActions * this.filtresActions.page_size, this.totalActions());
   }
 
-  selectionnerTicket(ticket: TicketReparation): void {
-    this.formulaireAction.repair_ticket = ticket.id;
-    this.formulaireAction.defect_type = ticket.failure_type || '';
-    this.erreurAction.set('');
-    this.succesAction.set('');
-  }
-
-  ticketSelectionne(): TicketReparation | undefined {
-    return this.tickets().find((ticket) => ticket.id === this.formulaireAction.repair_ticket);
-  }
-
-  libelleTicket(ticket: TicketReparation): string {
-    const details = [ticket.ticket_code, ticket.serial_number];
-
-    if (ticket.internal_reference) {
-      details.push(ticket.internal_reference);
-    }
-
-    if (ticket.failure_type) {
-      details.push(ticket.failure_type);
-    }
-
-    return details.join(' • ');
-  }
-
-  soumettreAction(): void {
-    if (!this.peutSaisirActions()) {
-      return;
-    }
-
-    const ticketId = this.formulaireAction.repair_ticket;
-    const actionTaken = this.formulaireAction.action_taken.trim();
-    const performedAt = this.formulaireAction.performed_at;
-
-    if (!ticketId) {
-      this.erreurAction.set('Selectionnez un ticket sur lequel intervenir.');
-      return;
-    }
-
-    if (!actionTaken) {
-      this.erreurAction.set("Renseignez l'action de reparation effectuee.");
-      return;
-    }
-
-    if (!performedAt) {
-      this.erreurAction.set("Renseignez la date et l'heure de l'intervention.");
-      return;
-    }
-
-    this.soumissionAction.set(true);
-    this.erreurAction.set('');
-    this.succesAction.set('');
-
-    const payload: CreateRepairActionPayload = {
-      repair_ticket: ticketId,
-      defect_type: this.nettoyer(this.formulaireAction.defect_type),
-      observed_defect: this.nettoyer(this.formulaireAction.observed_defect),
-      detected_cause: this.nettoyer(this.formulaireAction.detected_cause),
-      action_taken: actionTaken,
-      action_progress: this.formulaireAction.action_progress,
-      performed_at: this.convertirDateLocaleEnIso(performedAt),
-    };
-
-    this.actionsReparationApi.creerAction(payload).subscribe({
-      next: () => {
-        this.soumissionAction.set(false);
-        this.succesAction.set("L'action technicien a bien ete enregistree.");
-        this.formulaireAction = this.creerFormulaireAction();
-        this.chargerTickets(this.pageTickets);
-        this.chargerActions(1);
-      },
-      error: (err) => {
-        this.soumissionAction.set(false);
-        this.erreurAction.set(
-          this.extraireErreur(err, "Impossible d'enregistrer l'action de reparation.")
-        );
-      },
-    });
-  }
-
-  reinitialiserFormulaireAction(): void {
-    this.formulaireAction = this.creerFormulaireAction();
-    this.erreurAction.set('');
-    this.succesAction.set('');
-  }
-
   private nettoyer(value: string): string | undefined {
     const cleaned = value.trim();
     return cleaned ? cleaned : undefined;
-  }
-
-  private creerFormulaireAction() {
-    return {
-      repair_ticket: null as number | null,
-      defect_type: '',
-      observed_defect: '',
-      detected_cause: '',
-      action_taken: '',
-      action_progress: 'IN_PROGRESS',
-      performed_at: this.dateHeureLocaleCourante(),
-    };
-  }
-
-  private dateHeureLocaleCourante(): string {
-    const now = new Date();
-    now.setSeconds(0, 0);
-    const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
-    return localDate.toISOString().slice(0, 16);
-  }
-
-  private convertirDateLocaleEnIso(value: string): string {
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? value : date.toISOString();
-  }
-
-  private extraireErreur(err: unknown, fallback: string): string {
-    const payload = (err as { error?: unknown })?.error;
-
-    if (!payload) {
-      return fallback;
-    }
-
-    if (typeof payload === 'string') {
-      return payload;
-    }
-
-    if (typeof payload !== 'object') {
-      return fallback;
-    }
-
-    const detail = (payload as { detail?: string }).detail;
-    if (detail) {
-      return detail;
-    }
-
-    return Object.entries(payload as Record<string, unknown>)
-      .map(([key, value]) => {
-        if (Array.isArray(value)) {
-          return `${key}: ${value.join(', ')}`;
-        }
-
-        return `${key}: ${String(value)}`;
-      })
-      .join(' | ');
   }
 }

@@ -1,21 +1,30 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
+import { ROUTE_PATHS } from '../../../../coeur/constantes/routes.const';
 import { GestionPanne } from '../../../../coeur/modeles/gestion-panne.model';
 import { FailureListQuery, GestionPannesApi } from '../../../../coeur/services-api/gestion-pannes-api';
 
 @Component({
   selector: 'app-liste-pannes',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './liste-pannes.html',
   styleUrl: './liste-pannes.scss',
 })
 export class ListePannes implements OnInit {
   private readonly gestionPannesApi = inject(GestionPannesApi);
 
-  readonly statuts = ['IN_DEFECT', 'IN_REPAIR', 'WAITING_RETEST', 'REPAIRED'];
+  readonly paths = ROUTE_PATHS;
+  readonly statuts = ['IN_DEFECT', 'IN_REPAIR', 'WAITING_RETEST', 'REPAIRED', 'INVALIDATED'];
   readonly pageSizeOptions = [10, 25, 50];
+  readonly pannesActives = computed(() =>
+    this.pannes().filter((panne) => ['IN_DEFECT', 'IN_REPAIR', 'WAITING_RETEST'].includes(panne.failure_status)).length
+  );
+  readonly pannesCloturees = computed(() =>
+    this.pannes().filter((panne) => ['REPAIRED', 'INVALIDATED'].includes(panne.failure_status)).length
+  );
 
   chargement = signal(true);
   erreur = signal('');

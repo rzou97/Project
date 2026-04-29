@@ -1,0 +1,47 @@
+.detail-page {
+  gap: 1.25rem;
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.filter-field-wide {
+  grid-column: span 2;
+}
+
+.filter-field-full {
+  grid-column: 1 / -1;
+}
+
+.rule-list {
+  margin: 0;
+  padding-left: 1.15rem;
+  display: grid;
+  gap: 0.75rem;
+  color: var(--text-dark);
+}
+
+.rule-list li {
+  color: var(--text-dark);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 5.75rem;
+}
+
+@media (max-width: 920px) {
+  .hero-actions {
+    justify-content: flex-start;
+  }
+
+  .filter-field-wide,
+  .filter-field-full {
+    grid-column: auto;
+  }
+}

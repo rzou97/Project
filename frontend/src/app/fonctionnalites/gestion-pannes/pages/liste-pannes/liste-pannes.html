@@ -2,12 +2,28 @@
   <header class="module-header">
     <div class="module-title">
       <h1>Failure Cases</h1>
-      <p>Filtrez les pannes par SN, references, testeur, type de defaut et statut.</p>
+      <p>Filtrez les pannes par SN, references, testeur, type de defaut et ouvrez chaque cas avec son contexte metier complet.</p>
     </div>
     <button type="button" (click)="chargerPannes()">Rafraichir</button>
   </header>
 
   <p class="erreur" *ngIf="erreur()">{{ erreur() }}</p>
+
+  <section class="overview-grid">
+    <article class="overview-card">
+      <span class="overview-label">Pannes affichees</span>
+      <strong class="overview-value">{{ pannes().length }}</strong>
+    </article>
+    <article class="overview-card">
+      <span class="overview-label">Actives</span>
+      <strong class="overview-value">{{ pannesActives() }}</strong>
+    </article>
+    <article class="overview-card">
+      <span class="overview-label">Cloturees</span>
+      <strong class="overview-value">{{ pannesCloturees() }}</strong>
+    </article>
+  </section>
+
   <section class="toolbar-panel">
     <div class="filter-grid">
       <div class="filter-field">
@@ -54,7 +70,7 @@
   <p *ngIf="chargement()">Chargement des pannes...</p>
 
   <div class="results-meta" *ngIf="!chargement()">
-    <p>{{ totalPannes() }} panne(s) trouvee(s) • Affichage {{ debutResultats() }}-{{ finResultats() }}</p>
+    <p>{{ totalPannes() }} panne(s) trouvee(s) - affichage {{ debutResultats() }}-{{ finResultats() }}</p>
     <div class="pagination-controls">
       <button type="button" class="button-muted" (click)="pagePrecedente()" [disabled]="pageCourante === 1">Precedent</button>
       <span>Page {{ pageCourante }} / {{ totalPages() }}</span>
@@ -75,11 +91,16 @@
           <th>Message</th>
           <th>Statut</th>
           <th>Ouverte le</th>
+          <th>Action</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let panne of pannes()">
-          <td>{{ panne.serial_number }}</td>
+          <td>
+            <a class="link-serial" [routerLink]="['/', paths.cartes, panne.serial_number]">
+              {{ panne.serial_number }}
+            </a>
+          </td>
           <td>{{ panne.client_reference || '-' }}</td>
           <td>{{ panne.internal_reference || '-' }}</td>
           <td>{{ panne.detected_in_phase || '-' }}</td>
@@ -88,6 +109,11 @@
           <td>{{ panne.failure_message || '-' }}</td>
           <td><span class="status-badge" [attr.data-status]="panne.failure_status">{{ panne.failure_status }}</span></td>
           <td>{{ panne.opened_at | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
+          <td>
+            <a class="table-link-button" [routerLink]="['/', paths.gestionPannes, panne.id]">
+              Ouvrir le detail
+            </a>
+          </td>
         </tr>
       </tbody>
     </table>

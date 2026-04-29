@@ -43,4 +43,8 @@ export class GestionPannesApi {
       })
       .pipe(map((payload) => normalizePaginatedResponse(payload, page, pageSize)));
   }
+
+  obtenir(failureId: number): Observable<GestionPanne> {
+    return this.http.get<GestionPanne>(`${API_ENDPOINTS.gestionPannes}${failureId}/`);
+  }
 }
