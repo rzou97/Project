@@ -8,6 +8,8 @@ from apps.boards.models import Board
 from apps.failures.models import FailureCase
 from apps.repairs.models import RepairAction, RepairTicket
 
+FAILURE_STATUS_INVALIDATED = getattr(FailureCase.Status, "INVALIDATED", "INVALIDATED")
+TICKET_STATUS_CANCELLED = getattr(RepairTicket.Status, "CANCELLED", "CANCELLED")
 
 OPEN_TICKET_STATUSES = [
     RepairTicket.Status.OPEN,
@@ -152,7 +154,7 @@ def apply_repair_ticket_workflow(repair_ticket: RepairTicket) -> RepairTicket:
     if status in [RepairTicket.Status.OPEN, RepairTicket.Status.IN_PROGRESS]:
         if failure_case.failure_status not in [
             FailureCase.Status.REPAIRED,
-            FailureCase.Status.INVALIDATED,
+            FAILURE_STATUS_INVALIDATED,
         ]:
             failure_case.failure_status = FailureCase.Status.IN_REPAIR
             failure_case.save(update_fields=["failure_status", "updated_at"])
@@ -164,7 +166,7 @@ def apply_repair_ticket_workflow(repair_ticket: RepairTicket) -> RepairTicket:
     elif status == RepairTicket.Status.WAITING_RETEST:
         if failure_case.failure_status not in [
             FailureCase.Status.REPAIRED,
-            FailureCase.Status.INVALIDATED,
+            FAILURE_STATUS_INVALIDATED,
         ]:
             failure_case.failure_status = FailureCase.Status.WAITING_RETEST
             failure_case.save(update_fields=["failure_status", "updated_at"])
@@ -173,9 +175,9 @@ def apply_repair_ticket_workflow(repair_ticket: RepairTicket) -> RepairTicket:
             board.current_status = Board.Status.WAITING_RETEST
             board.save(update_fields=["current_status", "updated_at"])
 
-    elif status == RepairTicket.Status.CANCELLED:
-        if failure_case.failure_status != FailureCase.Status.INVALIDATED:
-            failure_case.failure_status = FailureCase.Status.INVALIDATED
+    elif status == TICKET_STATUS_CANCELLED:
+        if failure_case.failure_status != FAILURE_STATUS_INVALIDATED:
+            failure_case.failure_status = FAILURE_STATUS_INVALIDATED
             failure_case.closed_at = repair_ticket.closed_at or timezone.now()
             failure_case.save(update_fields=["failure_status", "closed_at", "updated_at"])
 
@@ -221,6 +223,6 @@ def cancel_tickets_for_invalidated_failure(failure_case: FailureCase, closed_at=
     )
 
     for ticket in tickets:
-        ticket.ticket_status = RepairTicket.Status.CANCELLED
+        ticket.ticket_status = TICKET_STATUS_CANCELLED
         ticket.closed_at = closed_at
         ticket.save(update_fields=["ticket_status", "closed_at", "updated_at"])

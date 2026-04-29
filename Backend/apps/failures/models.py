@@ -11,6 +11,7 @@ class FailureCase(models.Model):
         IN_REPAIR = "IN_REPAIR", "In Repair"
         WAITING_RETEST = "WAITING_RETEST", "Waiting Retest"
         REPAIRED = "REPAIRED", "Repaired"
+        INVALIDATED = "INVALIDATED", "Invalidated"
 
     board = models.ForeignKey(
         Board,

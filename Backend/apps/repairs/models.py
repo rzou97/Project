@@ -11,6 +11,7 @@ class RepairTicket(models.Model):
         IN_PROGRESS = "IN_PROGRESS", "In Progress"
         WAITING_RETEST = "WAITING_RETEST", "Waiting Retest"
         CLOSED = "CLOSED", "Closed"
+        CANCELLED = "CANCELLED", "Cancelled"
 
     failure_case = models.ForeignKey(
         FailureCase,

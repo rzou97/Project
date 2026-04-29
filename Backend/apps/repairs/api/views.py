@@ -12,6 +12,9 @@ from common.pagination import StandardResultsSetPagination
 
 from .serializers import RepairActionSerializer, RepairTicketSerializer
 
+FAILURE_STATUS_INVALIDATED = getattr(FailureCase.Status, "INVALIDATED", "INVALIDATED")
+TICKET_STATUS_CANCELLED = getattr(RepairTicket.Status, "CANCELLED", "CANCELLED")
+
 
 def _apply_repair_ticket_workflow(ticket: RepairTicket) -> RepairTicket:
     workflow = getattr(repair_services, "apply_repair_ticket_workflow", None)
@@ -25,7 +28,7 @@ def _apply_repair_ticket_workflow(ticket: RepairTicket) -> RepairTicket:
     if status in [RepairTicket.Status.OPEN, RepairTicket.Status.IN_PROGRESS]:
         if failure_case.failure_status not in [
             FailureCase.Status.REPAIRED,
-            FailureCase.Status.INVALIDATED,
+            FAILURE_STATUS_INVALIDATED,
         ]:
             failure_case.failure_status = FailureCase.Status.IN_REPAIR
             failure_case.save(update_fields=["failure_status", "updated_at"])
@@ -37,7 +40,7 @@ def _apply_repair_ticket_workflow(ticket: RepairTicket) -> RepairTicket:
     elif status == RepairTicket.Status.WAITING_RETEST:
         if failure_case.failure_status not in [
             FailureCase.Status.REPAIRED,
-            FailureCase.Status.INVALIDATED,
+            FAILURE_STATUS_INVALIDATED,
         ]:
             failure_case.failure_status = FailureCase.Status.WAITING_RETEST
             failure_case.save(update_fields=["failure_status", "updated_at"])
@@ -46,9 +49,9 @@ def _apply_repair_ticket_workflow(ticket: RepairTicket) -> RepairTicket:
             board.current_status = Board.Status.WAITING_RETEST
             board.save(update_fields=["current_status", "updated_at"])
 
-    elif status == RepairTicket.Status.CANCELLED:
-        if failure_case.failure_status != FailureCase.Status.INVALIDATED:
-            failure_case.failure_status = FailureCase.Status.INVALIDATED
+    elif status == TICKET_STATUS_CANCELLED:
+        if failure_case.failure_status != FAILURE_STATUS_INVALIDATED:
+            failure_case.failure_status = FAILURE_STATUS_INVALIDATED
             failure_case.closed_at = ticket.closed_at
             failure_case.save(update_fields=["failure_status", "closed_at", "updated_at"])
 

@@ -7,7 +7,9 @@ from apps.boards.models import Board
 from apps.failures.models import FailureCase
 from apps.intelligence.models import RepairHistory
 from apps.repairs.services import (
+    cancel_tickets_for_invalidated_failure,
     close_tickets_for_repaired_failure,
+    has_confirmed_repair_workflow,
     get_or_create_open_ticket_for_failure,
 )
 from apps.testresults.models import TestResult
@@ -212,19 +214,36 @@ def _close_failure_if_retest_passed(board: Board, test_result: TestResult):
     )
 
     if active_failure:
-        active_failure.failure_status = FailureCase.Status.REPAIRED
+        if has_confirmed_repair_workflow(active_failure):
+            active_failure.failure_status = FailureCase.Status.REPAIRED
+            active_failure.closed_at = test_result.tested_at
+            active_failure.save(update_fields=["failure_status", "closed_at", "updated_at"])
+            close_tickets_for_repaired_failure(active_failure, closed_at=test_result.tested_at)
+            RepairHistory.objects.filter(
+                failure_case=active_failure,
+                final_outcome__in=["IN_PROGRESS", "WAITING_RETEST"],
+            ).update(
+                retest_result=TestResult.Result.PASSED,
+                final_outcome="REPAIRED",
+            )
+
+            board.current_status = Board.Status.REPAIRED
+            board.save(update_fields=["current_status", "updated_at"])
+            return active_failure
+
+        active_failure.failure_status = FailureCase.Status.INVALIDATED
         active_failure.closed_at = test_result.tested_at
         active_failure.save(update_fields=["failure_status", "closed_at", "updated_at"])
-        close_tickets_for_repaired_failure(active_failure, closed_at=test_result.tested_at)
+        cancel_tickets_for_invalidated_failure(active_failure, closed_at=test_result.tested_at)
         RepairHistory.objects.filter(
             failure_case=active_failure,
             final_outcome__in=["IN_PROGRESS", "WAITING_RETEST"],
         ).update(
             retest_result=TestResult.Result.PASSED,
-            final_outcome="REPAIRED",
+            final_outcome="INVALIDATED",
         )
 
-        board.current_status = Board.Status.REPAIRED
+        board.current_status = Board.Status.HEALTHY
         board.save(update_fields=["current_status", "updated_at"])
         return active_failure
 

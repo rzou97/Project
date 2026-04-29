@@ -2,6 +2,8 @@ from rest_framework import serializers
 
 from apps.repairs.models import RepairAction, RepairTicket
 
+TICKET_STATUS_CANCELLED = getattr(RepairTicket.Status, "CANCELLED", "CANCELLED")
+
 
 class RepairTicketSerializer(serializers.ModelSerializer):
     serial_number = serializers.CharField(source="failure_case.serial_number", read_only=True)
@@ -108,7 +110,7 @@ class RepairActionSerializer(serializers.ModelSerializer):
 
         if repair_ticket and repair_ticket.ticket_status in [
             RepairTicket.Status.CLOSED,
-            RepairTicket.Status.CANCELLED,
+            TICKET_STATUS_CANCELLED,
         ]:
             raise serializers.ValidationError(
                 {
