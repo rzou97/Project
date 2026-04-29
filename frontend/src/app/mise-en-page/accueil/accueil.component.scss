@@ -76,6 +76,99 @@
   color: #102447;
 }
 
+.failure-chart {
+  margin-bottom: 22px;
+  padding: 20px;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(37, 99, 235, 0.12), transparent 38%),
+    linear-gradient(180deg, rgba(243, 248, 255, 0.95), rgba(232, 240, 251, 0.88));
+  border: 1px solid rgba(163, 183, 219, 0.45);
+}
+
+.chart-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.chart-head h3 {
+  margin: 0 0 4px;
+  font-size: 1.1rem;
+  color: #123055;
+}
+
+.chart-head p {
+  margin: 0;
+  color: #56708f;
+  font-size: 0.9rem;
+}
+
+.chart-scale {
+  color: #486280;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.chart-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chart-row {
+  display: grid;
+  grid-template-columns: minmax(170px, 220px) minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+}
+
+.chart-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.chart-meta strong {
+  color: #102447;
+  font-size: 0.95rem;
+}
+
+.chart-meta small {
+  color: #5c7190;
+  font-size: 0.78rem;
+}
+
+.chart-track {
+  position: relative;
+  height: 38px;
+  border-radius: 999px;
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.9), rgba(230, 238, 249, 0.95));
+  border: 1px solid rgba(184, 200, 225, 0.75);
+}
+
+.chart-bar {
+  height: 100%;
+  min-width: 44px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 12px;
+  background:
+    linear-gradient(135deg, #f97316 0%, #ef4444 45%, #1d4ed8 100%);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.8rem;
+  box-shadow: 0 10px 20px rgba(29, 78, 216, 0.18);
+  transition: width 0.25s ease;
+}
+
 table {
   overflow: hidden;
   border-radius: 14px;
@@ -127,5 +220,14 @@ table {
 
   .entete-page h1 {
     font-size: 32px;
+  }
+
+  .chart-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .chart-row {
+    grid-template-columns: 1fr;
   }
 }

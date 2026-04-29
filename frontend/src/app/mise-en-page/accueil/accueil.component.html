@@ -28,6 +28,31 @@
       </article>
     </div>
 
+    <div class="failure-chart" *ngIf="topReferencesPannes().length > 0">
+      <div class="chart-head">
+        <div>
+          <h3>References les plus exposees</h3>
+          <p>Lecture sur l'etat physique actuel des produits, en retenant le dernier statut par SN.</p>
+        </div>
+        <span class="chart-scale">Echelle relative au taux le plus eleve</span>
+      </div>
+
+      <div class="chart-list">
+        <div class="chart-row" *ngFor="let item of topReferencesPannes()">
+          <div class="chart-meta">
+            <strong>{{ referenceLabel(item.internal_reference) }}</strong>
+            <small>{{ item.defective_sn }} / {{ item.total_sn }} en panne</small>
+          </div>
+
+          <div class="chart-track">
+            <div class="chart-bar" [style.width]="chartBarWidth(item)">
+              <span>{{ chartRateLabel(item) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <table>
       <thead>
         <tr>
