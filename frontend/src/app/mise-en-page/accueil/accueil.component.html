@@ -1,6 +1,13 @@
 <section class="accueil">
   <div class="entete-page">
-    <h1>Accueil</h1>
+    <div class="hero-copy">
+      <p class="eyebrow">Production intelligence</p>
+      <h1>Accueil</h1>
+      <p class="intro">
+        Vue synthese de l'etat actuel des produits, du risque panne par reference et de la sante des testeurs.
+      </p>
+    </div>
+
     <a class="btn-grafana" href="http://localhost/grafana/" target="_blank" rel="noopener">
       Ouvrir Grafana
     </a>
@@ -10,124 +17,216 @@
     {{ erreur() }}
   </div>
 
-  <div class="bloc" *ngIf="tauxPannesActuel() as tauxPannes">
-    <h2>Taux de pannes actuel</h2>
+  <ng-container *ngIf="tauxPannesActuel() as tauxPannes">
+    <section class="hero-panel">
+      <div class="hero-panel-copy">
+        <p class="eyebrow">KPI panne actuel</p>
+        <h2>{{ resumeCharge() }}</h2>
+        <p>
+          Le calcul retient l'etat physique le plus recent de chaque SN, pour ne compter qu'une seule fois chaque produit reellement en panne.
+        </p>
+      </div>
 
-    <div class="overview-grid">
-      <article class="overview-card">
-        <span class="overview-label">Produits suivis</span>
-        <strong class="overview-value">{{ tauxPannes.total_sn }}</strong>
+      <div class="hero-panel-metrics">
+        <article class="metric-card metric-card-primary">
+          <span class="metric-label">Produits en panne</span>
+          <strong class="metric-value">{{ tauxPannes.total_defective_sn }}</strong>
+          <small>{{ tauxPannes.current_failure_rate | number: '1.0-2' }} % du parc suivi</small>
+        </article>
+        <article class="metric-card">
+          <span class="metric-label">Produits suivis</span>
+          <strong class="metric-value">{{ tauxPannes.total_sn }}</strong>
+          <small>Population active consolidee</small>
+        </article>
+        <article class="metric-card">
+          <span class="metric-label">Produits sains</span>
+          <strong class="metric-value">{{ snSains() }}</strong>
+          <small>SN actuellement hors defaut</small>
+        </article>
+      </div>
+    </section>
+
+    <section class="critical-grid" *ngIf="referencesCritiques().length > 0">
+      <article class="critical-card" *ngFor="let item of referencesCritiques(); let index = index">
+        <div class="critical-rank">Top {{ index + 1 }}</div>
+        <strong>{{ referenceLabel(item.internal_reference) }}</strong>
+        <span>{{ item.defective_sn }} produit(s) en panne</span>
+        <small>{{ item.total_sn }} SN suivis • {{ item.current_failure_rate | number: '1.0-2' }} %</small>
       </article>
-      <article class="overview-card">
-        <span class="overview-label">Produits en panne</span>
-        <strong class="overview-value">{{ tauxPannes.total_defective_sn }}</strong>
-      </article>
-      <article class="overview-card">
-        <span class="overview-label">Taux global</span>
-        <strong class="overview-value">{{ tauxPannes.current_failure_rate }} %</strong>
-      </article>
+    </section>
+
+    <div class="kpi-layout">
+      <section class="bloc bloc-featured">
+        <div class="bloc-head">
+          <div>
+            <h2>Charge panne par reference</h2>
+            <p>Les references les plus impactees sont priorisees en fonction du nombre actuel de produits defectueux.</p>
+          </div>
+          <span class="bloc-chip">Top {{ topReferencesPannes().length }}</span>
+        </div>
+
+        <div class="failure-chart" *ngIf="topReferencesPannes().length > 0; else noReferenceData">
+          <div class="chart-head">
+            <div>
+              <h3>References les plus exposees</h3>
+              <p>Lecture en volume de pannes actuelles, avec un code couleur selon la pression panne.</p>
+            </div>
+            <span class="chart-scale">Base : nombre de SN defectueux</span>
+          </div>
+
+          <div class="chart-columns">
+            <div class="chart-column" *ngFor="let item of topReferencesPannes()">
+              <div class="chart-column-value">{{ item.defective_sn }}</div>
+
+              <div class="chart-column-track">
+                <div
+                  class="chart-column-fill"
+                  [class]="chartColumnClass(item)"
+                  [style.height]="chartColumnHeight(item)"
+                ></div>
+              </div>
+
+              <div class="chart-column-meta">
+                <strong>{{ referenceLabel(item.internal_reference) }}</strong>
+                <small>{{ severityLabel(item) }} • {{ item.current_failure_rate | number: '1.0-2' }} %</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <ng-template #noReferenceData>
+          <p class="empty-state">Aucune reference ne remonte pour le moment dans le KPI pannes.</p>
+        </ng-template>
+      </section>
+
+      <aside class="bloc bloc-side">
+        <div class="bloc-head">
+          <div>
+            <h2>Lecture metier</h2>
+            <p>Ce qu'il faut retenir rapidement avant de descendre dans les modules.</p>
+          </div>
+        </div>
+
+        <div class="insight-list">
+          <article class="insight-card">
+            <span class="insight-label">Objectif du KPI</span>
+            <strong>Compter les produits physiques reellement en panne</strong>
+            <p>Chaque SN est consolide sur son dernier etat connu pour eviter de surcompter les memes pieces.</p>
+          </article>
+
+          <article class="insight-card">
+            <span class="insight-label">Interpretation</span>
+            <strong>Prioriser la reference avant le banc</strong>
+            <p>Le volume de pannes par reference aide a orienter la reparation, l'analyse qualite et les actions atelier.</p>
+          </article>
+
+          <article class="insight-card">
+            <span class="insight-label">Action rapide</span>
+            <strong>Cibler les references du top 3</strong>
+            <p>Ce sont elles qui concentrent le plus de produits defectueux a cet instant.</p>
+          </article>
+        </div>
+      </aside>
     </div>
 
-    <div class="failure-chart" *ngIf="topReferencesPannes().length > 0">
-      <div class="chart-head">
+    <section class="bloc">
+      <div class="bloc-head">
         <div>
-          <h3>References avec le plus de produits en panne</h3>
-          <p>Lecture sur l'etat physique actuel des produits, en retenant le dernier statut par SN.</p>
-        </div>
-        <span class="chart-scale">Vue en colonnes sur le nombre de produits en panne</span>
-      </div>
-
-      <div class="chart-columns">
-        <div class="chart-column" *ngFor="let item of topReferencesPannes()">
-          <div class="chart-column-value">{{ item.defective_sn }}</div>
-
-          <div class="chart-column-track">
-            <div class="chart-column-fill" [style.height]="chartColumnHeight(item)"></div>
-          </div>
-
-          <div class="chart-column-meta">
-            <strong>{{ referenceLabel(item.internal_reference) }}</strong>
-            <small>{{ item.defective_sn }} / {{ item.total_sn }} en panne</small>
-          </div>
+          <h2>Detail par reference</h2>
+          <p>Table de lecture exhaustive pour comparer le volume et le taux de pannes sur tout le portefeuille actuel.</p>
         </div>
       </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Reference interne</th>
+            <th>SN suivis</th>
+            <th>SN en panne</th>
+            <th>Taux actuel</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of referencesPannesTriees()">
+            <td>{{ referenceLabel(item.internal_reference) }}</td>
+            <td>{{ item.total_sn }}</td>
+            <td>{{ item.defective_sn }}</td>
+            <td>{{ item.current_failure_rate | number: '1.0-2' }} %</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </ng-container>
+
+  <div class="kpi-layout">
+    <div class="bloc">
+      <div class="bloc-head">
+        <div>
+          <h2>FPY instantane des testeurs</h2>
+          <p>Vue courte sur la qualite immediate de production, testeur par testeur.</p>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Testeur</th>
+            <th>Date</th>
+            <th>SN testes</th>
+            <th>SN OK</th>
+            <th>FPY</th>
+            <th>Dernier test</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of fpyTesteurs()">
+            <td>{{ item.tester_id }}</td>
+            <td>{{ item.day_date }}</td>
+            <td>{{ item.unique_sn_tested }}</td>
+            <td>{{ item.unique_sn_passed }}</td>
+            <td>{{ item.fpy_instant | number: '1.0-2' }} %</td>
+            <td>{{ item.last_test_at || '-' }}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Reference interne</th>
-          <th>SN suivis</th>
-          <th>SN en panne</th>
-          <th>Taux actuel</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let item of tauxPannes.references">
-          <td>{{ referenceLabel(item.internal_reference) }}</td>
-          <td>{{ item.total_sn }}</td>
-          <td>{{ item.defective_sn }}</td>
-          <td>{{ item.current_failure_rate }} %</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+    <div class="bloc">
+      <div class="bloc-head">
+        <div>
+          <h2>Statut actuel des testeurs</h2>
+          <p>Pour voir rapidement quels bancs sont actifs, degrades ou en reparation.</p>
+        </div>
+      </div>
 
-  <div class="bloc">
-    <h2>FPY instantane des testeurs</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Testeur</th>
-          <th>Date</th>
-          <th>SN testes</th>
-          <th>SN OK</th>
-          <th>FPY</th>
-          <th>Dernier test</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let item of fpyTesteurs()">
-          <td>{{ item.tester_id }}</td>
-          <td>{{ item.day_date }}</td>
-          <td>{{ item.unique_sn_tested }}</td>
-          <td>{{ item.unique_sn_passed }}</td>
-          <td>{{ item.fpy_instant }} %</td>
-          <td>{{ item.last_test_at || '-' }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <div class="bloc">
-    <h2>Statut actuel des testeurs</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Testeur</th>
-          <th>Operateur</th>
-          <th>Reference interne</th>
-          <th>Dernier PV</th>
-          <th>Fail rate</th>
-          <th>Statut</th>
-          <th>Alertes</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let item of statutsTesteurs()">
-          <td>{{ item.tester_id }}</td>
-          <td>{{ item.operator_name || '-' }}</td>
-          <td>{{ item.internal_reference || '-' }}</td>
-          <td>{{ item.last_test_at || '-' }}</td>
-          <td>{{ item.current_fail_rate }} %</td>
-          <td>
-            <span class="badge" [attr.data-statut]="item.current_status">
-              {{ libelleStatut(item.current_status) }}
-            </span>
-          </td>
-          <td>{{ item.alert_status }}</td>
-        </tr>
-      </tbody>
-    </table>
+      <table>
+        <thead>
+          <tr>
+            <th>Testeur</th>
+            <th>Operateur</th>
+            <th>Reference interne</th>
+            <th>Dernier PV</th>
+            <th>Fail rate</th>
+            <th>Statut</th>
+            <th>Alertes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of statutsTesteurs()">
+            <td>{{ item.tester_id }}</td>
+            <td>{{ item.operator_name || '-' }}</td>
+            <td>{{ item.internal_reference || '-' }}</td>
+            <td>{{ item.last_test_at || '-' }}</td>
+            <td>{{ item.current_fail_rate | number: '1.0-2' }} %</td>
+            <td>
+              <span class="badge" [attr.data-statut]="item.current_status">
+                {{ libelleStatut(item.current_status) }}
+              </span>
+            </td>
+            <td>{{ item.alert_status }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </section>

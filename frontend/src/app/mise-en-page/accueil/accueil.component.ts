@@ -25,12 +25,45 @@ export class AccueilComponent implements OnInit {
   fpyTesteurs = signal<TesterFpyInstantKpi[]>([]);
   statutsTesteurs = signal<TesterCurrentStatusKpi[]>([]);
   tauxPannesActuel = signal<TauxPanneActuelKpi | null>(null);
-  topReferencesPannes = computed(() =>
-    (this.tauxPannesActuel()?.references ?? []).slice(0, 10)
+  referencesPannesTriees = computed(() =>
+    [...(this.tauxPannesActuel()?.references ?? [])].sort((a, b) => {
+      if (b.defective_sn !== a.defective_sn) {
+        return b.defective_sn - a.defective_sn;
+      }
+
+      if (b.current_failure_rate !== a.current_failure_rate) {
+        return b.current_failure_rate - a.current_failure_rate;
+      }
+
+      return b.total_sn - a.total_sn;
+    })
   );
+  topReferencesPannes = computed(() => this.referencesPannesTriees().slice(0, 8));
+  referencesCritiques = computed(() => this.referencesPannesTriees().slice(0, 3));
   maxChartDefectCount = computed(() => {
     const counts = this.topReferencesPannes().map((item) => item.defective_sn);
     return counts.length ? Math.max(...counts, 1) : 1;
+  });
+  snSains = computed(() => {
+    const taux = this.tauxPannesActuel();
+    if (!taux) {
+      return 0;
+    }
+
+    return Math.max(taux.total_sn - taux.total_defective_sn, 0);
+  });
+  resumeCharge = computed(() => {
+    const taux = this.tauxPannesActuel()?.current_failure_rate ?? 0;
+
+    if (taux >= 10) {
+      return 'Charge pannes critique';
+    }
+
+    if (taux >= 5) {
+      return 'Charge pannes a surveiller';
+    }
+
+    return 'Charge pannes sous controle';
   });
 
   ngOnInit(): void {
@@ -83,5 +116,29 @@ export class AccueilComponent implements OnInit {
     const maxCount = this.maxChartDefectCount();
     const height = maxCount <= 0 ? 0 : (item.defective_sn / maxCount) * 100;
     return `${Math.max(height, item.defective_sn > 0 ? 12 : 0)}%`;
+  }
+
+  chartColumnClass(item: TauxPanneActuelReferenceKpi): string {
+    if (item.current_failure_rate >= 15) {
+      return 'is-critical';
+    }
+
+    if (item.current_failure_rate >= 7) {
+      return 'is-warning';
+    }
+
+    return 'is-stable';
+  }
+
+  severityLabel(item: TauxPanneActuelReferenceKpi): string {
+    if (item.current_failure_rate >= 15) {
+      return 'Critique';
+    }
+
+    if (item.current_failure_rate >= 7) {
+      return 'Surveillance';
+    }
+
+    return 'Stable';
   }
 }
