@@ -105,7 +105,80 @@ class RepairProcedureTemplate(models.Model):
         return f"{self.procedure_name} | {self.failure_type} | {self.version}"
 
 
+class FailureEnrichment(models.Model):
+    class Source(models.TextChoices):
+        RULE = "RULE", "Rule"
+        HISTORY = "HISTORY", "History"
+        ML = "ML", "ML"
+        LLM = "LLM", "LLM"
+        HYBRID = "HYBRID", "Hybrid"
+
+    failure_case = models.OneToOneField(
+        "failures.FailureCase",
+        on_delete=models.CASCADE,
+        related_name="intelligence_enrichment",
+    )
+    normalized_family = models.CharField(max_length=150, blank=True, default="", db_index=True)
+    normalized_signature = models.CharField(max_length=255, blank=True, default="", db_index=True)
+    probable_root_cause = models.TextField(blank=True, default="")
+    suggested_action = models.TextField(blank=True, default="")
+    suggested_checks = models.JSONField(default=list, blank=True)
+    suspect_components = models.JSONField(default=list, blank=True)
+    supporting_history_count = models.PositiveIntegerField(default=0)
+    confidence_score = models.DecimalField(max_digits=6, decimal_places=4, default=0)
+    needs_human_review = models.BooleanField(default=False, db_index=True)
+    enrichment_source = models.CharField(
+        max_length=20,
+        choices=Source.choices,
+        default=Source.RULE,
+        db_index=True,
+    )
+    model_name = models.CharField(max_length=100, blank=True, default="")
+    model_version = models.CharField(max_length=30, blank=True, default="")
+    prompt_version = models.CharField(max_length=30, blank=True, default="")
+    evidence_json = models.JSONField(default=dict, blank=True)
+    enriched_at = models.DateTimeField(db_index=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "intelligence_failure_enrichment"
+        ordering = ["-enriched_at", "-id"]
+        indexes = [
+            models.Index(fields=["normalized_family"]),
+            models.Index(fields=["normalized_signature"]),
+            models.Index(fields=["enrichment_source"]),
+            models.Index(fields=["needs_human_review"]),
+            models.Index(fields=["enriched_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.failure_case.serial_number} | {self.normalized_family} | {self.confidence_score}"
+
+
 class RepairPrediction(models.Model):
+    class Source(models.TextChoices):
+        RULE = "RULE", "Rule"
+        HISTORY = "HISTORY", "History"
+        ML = "ML", "ML"
+        LLM = "LLM", "LLM"
+        HYBRID = "HYBRID", "Hybrid"
+
+    failure_case = models.ForeignKey(
+        "failures.FailureCase",
+        on_delete=models.SET_NULL,
+        related_name="repair_predictions",
+        null=True,
+        blank=True,
+    )
+    repair_ticket = models.ForeignKey(
+        "repairs.RepairTicket",
+        on_delete=models.SET_NULL,
+        related_name="repair_predictions",
+        null=True,
+        blank=True,
+    )
     prediction_type = models.CharField(max_length=100, db_index=True)
     target_serial_number = models.CharField(max_length=100, db_index=True)
     predicted_cause = models.TextField(blank=True, default="")
@@ -117,6 +190,16 @@ class RepairPrediction(models.Model):
         null=True,
         blank=True,
     )
+    prediction_source = models.CharField(
+        max_length=20,
+        choices=Source.choices,
+        default=Source.HISTORY,
+        db_index=True,
+    )
+    model_name = models.CharField(max_length=100, blank=True, default="")
+    model_version = models.CharField(max_length=30, blank=True, default="")
+    input_signature = models.CharField(max_length=255, blank=True, default="", db_index=True)
+    explanation_json = models.JSONField(default=dict, blank=True)
     confidence_score = models.DecimalField(max_digits=6, decimal_places=4)
     predicted_at = models.DateTimeField(db_index=True)
 
@@ -128,6 +211,8 @@ class RepairPrediction(models.Model):
         indexes = [
             models.Index(fields=["prediction_type"]),
             models.Index(fields=["target_serial_number"]),
+            models.Index(fields=["prediction_source"]),
+            models.Index(fields=["input_signature"]),
             models.Index(fields=["predicted_at"]),
         ]
 

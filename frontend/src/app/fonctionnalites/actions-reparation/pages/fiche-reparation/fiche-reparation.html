@@ -91,6 +91,95 @@
           </div>
         </section>
 
+        <section class="section-card intelligence-section">
+          <div class="section-heading">
+            <div>
+              <h2>Assistant intelligent</h2>
+              <p>
+                Cette analyse exploite l'historique des reparations et la signature du defaut pour suggerer une piste
+                de diagnostic avant intervention.
+              </p>
+            </div>
+
+            <div class="section-heading-actions">
+              <span class="status-badge" *ngIf="enrichment()" [attr.data-status]="enrichment()?.needs_human_review ? 'WARNING' : 'SUCCESS'">
+                {{ enrichment()?.needs_human_review ? 'A VERIFIER' : 'EXPLOITABLE' }}
+              </span>
+              <button type="button" class="button-muted" *ngIf="peutAnalyser()" (click)="analyserTicket()" [disabled]="analyseIntelligence()">
+                {{ analyseIntelligence() ? 'Analyse...' : (enrichment() ? "Relancer l'analyse" : "Generer l'analyse") }}
+              </button>
+            </div>
+          </div>
+
+          <p class="succes" *ngIf="succesIntelligence()">{{ succesIntelligence() }}</p>
+          <p class="erreur" *ngIf="erreurIntelligence()">{{ erreurIntelligence() }}</p>
+          <p *ngIf="chargementIntelligence()">Chargement de l'analyse intelligente...</p>
+
+          <ng-container *ngIf="enrichment() as enrichment; else noIntelligence">
+            <div class="metric-strip intelligence-metrics">
+              <article class="metric-card">
+                <span class="metric-label">Famille normalisee</span>
+                <strong class="metric-value">{{ enrichment.normalized_family || '-' }}</strong>
+              </article>
+              <article class="metric-card">
+                <span class="metric-label">Confiance</span>
+                <strong class="metric-value">{{ intelligenceConfidence() }}</strong>
+              </article>
+              <article class="metric-card">
+                <span class="metric-label">Source</span>
+                <strong class="metric-value">{{ enrichment.enrichment_source || '-' }}</strong>
+              </article>
+              <article class="metric-card">
+                <span class="metric-label">Cas support</span>
+                <strong class="metric-value">{{ enrichment.supporting_history_count }}</strong>
+              </article>
+            </div>
+
+            <div class="detail-grid">
+              <div class="detail-item detail-item-wide">
+                <span class="detail-label">Cause probable</span>
+                <strong class="detail-value">{{ enrichment.probable_root_cause || '-' }}</strong>
+              </div>
+              <div class="detail-item detail-item-wide">
+                <span class="detail-label">Action suggeree</span>
+                <strong class="detail-value">{{ enrichment.suggested_action || '-' }}</strong>
+              </div>
+              <div class="detail-item detail-item-wide">
+                <span class="detail-label">Signature normalisee</span>
+                <strong class="detail-value">{{ enrichment.normalized_signature || '-' }}</strong>
+              </div>
+            </div>
+
+            <div class="intelligence-grid">
+              <article class="insight-card">
+                <h3>Checks recommandes</h3>
+                <ul class="rule-list" *ngIf="enrichment.suggested_checks.length > 0; else noChecks">
+                  <li *ngFor="let check of enrichment.suggested_checks">{{ check }}</li>
+                </ul>
+                <ng-template #noChecks>
+                  <p class="empty-state">Aucun check recommande pour le moment.</p>
+                </ng-template>
+              </article>
+
+              <article class="insight-card">
+                <h3>Composants suspects</h3>
+                <div class="chip-list" *ngIf="enrichment.suspect_components.length > 0; else noComponents">
+                  <span class="tag-chip" *ngFor="let component of enrichment.suspect_components">{{ component }}</span>
+                </div>
+                <ng-template #noComponents>
+                  <p class="empty-state">Aucun composant extrait automatiquement.</p>
+                </ng-template>
+              </article>
+            </div>
+          </ng-container>
+
+          <ng-template #noIntelligence>
+            <p class="empty-state" *ngIf="!chargementIntelligence()">
+              Aucune analyse intelligente n'est encore disponible pour ce ticket.
+            </p>
+          </ng-template>
+        </section>
+
         <section class="section-card" *ngIf="peutSaisirActions(); else readOnlyRepair">
           <div class="section-heading">
             <div>
@@ -219,6 +308,44 @@
             <p class="empty-state" *ngIf="!chargementActions()">Aucune action n'a encore ete enregistree sur ce ticket.</p>
           </ng-template>
         </section>
+
+        <section class="section-card">
+          <div class="section-heading">
+            <div>
+              <h2>Cas similaires recents</h2>
+              <p>Historique recent sur des defauts de meme famille et reference interne pour guider le diagnostic.</p>
+            </div>
+          </div>
+
+          <div class="table-shell" *ngIf="similarHistories().length > 0; else noSimilarHistory">
+            <table>
+              <thead>
+                <tr>
+                  <th>SN</th>
+                  <th>Cause detectee</th>
+                  <th>Action retenue</th>
+                  <th>Issue</th>
+                  <th>Cycle</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let history of similarHistories()">
+                  <td>
+                    <a class="table-link-button" [routerLink]="['/', paths.cartes, history.serial_number]">{{ history.serial_number }}</a>
+                  </td>
+                  <td>{{ history.detected_cause || '-' }}</td>
+                  <td>{{ history.action_taken || '-' }}</td>
+                  <td><span class="status-badge" [attr.data-status]="history.final_outcome">{{ history.final_outcome || '-' }}</span></td>
+                  <td>{{ history.repair_cycle_count }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <ng-template #noSimilarHistory>
+            <p class="empty-state">Aucun cas similaire recent n'a encore ete retrouve pour cette signature.</p>
+          </ng-template>
+        </section>
       </div>
 
       <aside class="workspace-aside">
@@ -236,6 +363,30 @@
             <div class="detail-item">
               <span class="detail-label">Efficacite</span>
               <strong class="detail-value">{{ ticket.repair_effectiveness ?? '-' }}</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-card" *ngIf="prediction() as prediction">
+          <h2>Prediction active</h2>
+          <div class="detail-list">
+            <div class="detail-item">
+              <span class="detail-label">Cause predite</span>
+              <strong class="detail-value">{{ prediction.predicted_cause || '-' }}</strong>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Action recommandee</span>
+              <strong class="detail-value">{{ prediction.recommended_action || '-' }}</strong>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Source</span>
+              <strong class="detail-value">{{ prediction.prediction_source || '-' }}</strong>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Modele</span>
+              <strong class="detail-value">
+                {{ prediction.model_name || '-' }}{{ prediction.model_version ? ' / ' + prediction.model_version : '' }}
+              </strong>
             </div>
           </div>
         </section>

@@ -1,5 +1,6 @@
 import hashlib
 
+from django.conf import settings
 from django.db import connection, transaction
 from django.utils import timezone
 from apps.syncengine.models import SyncCursor
@@ -167,7 +168,7 @@ def _open_failure_if_needed(board: Board, test_result: TestResult):
     if test_result.result not in KO_RESULTS:
         return None
 
-    failure_case, _ = FailureCase.objects.get_or_create(
+    failure_case, created = FailureCase.objects.get_or_create(
         source_test_result=test_result,
         defaults={
             "board": board,
@@ -187,10 +188,27 @@ def _open_failure_if_needed(board: Board, test_result: TestResult):
         board.current_status = Board.Status.IN_DEFECT
         board.save(update_fields=["current_status", "updated_at"])
 
-    get_or_create_open_ticket_for_failure(
+    repair_ticket, _ticket_created = get_or_create_open_ticket_for_failure(
         failure_case=failure_case,
         opened_at=test_result.tested_at,
     )
+
+    if created and getattr(settings, "INTELLIGENCE_AUTO_ANALYZE_FAILURES", True):
+        def _schedule_failure_analysis():
+            from apps.intelligence.tasks import analyze_failure_case_task
+
+            if getattr(settings, "INTELLIGENCE_ANALYSIS_ASYNC", True):
+                analyze_failure_case_task.delay(
+                    failure_case.id,
+                    repair_ticket.id,
+                )
+            else:
+                analyze_failure_case_task(
+                    failure_case.id,
+                    repair_ticket.id,
+                )
+
+        transaction.on_commit(_schedule_failure_analysis)
 
     return failure_case
 

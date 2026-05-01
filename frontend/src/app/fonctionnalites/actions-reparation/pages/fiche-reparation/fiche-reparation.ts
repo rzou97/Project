@@ -28,11 +28,18 @@ export class FicheReparation implements OnInit {
   readonly actions = this.store.actions;
   readonly chargementTicket = this.store.chargementTicket;
   readonly chargementActions = this.store.chargementActions;
+  readonly chargementIntelligence = this.store.chargementIntelligence;
+  readonly analyseIntelligence = this.store.analyseIntelligence;
   readonly miseAJourTicket = this.store.miseAJourTicket;
   readonly soumissionAction = this.store.soumissionAction;
   readonly erreur = this.store.erreur;
   readonly erreurAction = this.store.erreurAction;
+  readonly erreurIntelligence = this.store.erreurIntelligence;
   readonly succesAction = this.store.succesAction;
+  readonly succesIntelligence = this.store.succesIntelligence;
+  readonly enrichment = this.store.enrichment;
+  readonly prediction = this.store.prediction;
+  readonly similarHistories = this.store.similarHistories;
 
   readonly peutSaisirActions = computed(() => {
     const role = this.sessionService.utilisateur()?.role;
@@ -45,7 +52,15 @@ export class FicheReparation implements OnInit {
     const status = this.ticket()?.ticket_status;
     return this.peutSaisirActions() && !!status && !['CLOSED', 'CANCELLED'].includes(status);
   });
+  readonly peutAnalyser = computed(() => this.peutSaisirActions() || !!this.sessionService.utilisateur());
   readonly actionCount = computed(() => this.actions().length);
+  readonly intelligenceConfidence = computed(() => {
+    const confidence = this.enrichment()?.confidence_score ?? this.prediction()?.confidence_score;
+    if (confidence == null) {
+      return '-';
+    }
+    return `${Math.round(confidence * 100)}%`;
+  });
 
   formulaireAction = this.creerFormulaireAction();
   private ticketIdCourant: number | null = null;
@@ -115,6 +130,18 @@ export class FicheReparation implements OnInit {
       },
       'Le ticket a ete annule.'
     );
+  }
+
+  analyserTicket(): void {
+    const ticket = this.ticket();
+    if (!ticket) {
+      return;
+    }
+
+    this.store.analyserTicketIntelligence({
+      failure_case: ticket.failure_case,
+      repair_ticket: ticket.id,
+    });
   }
 
   soumettreAction(): void {

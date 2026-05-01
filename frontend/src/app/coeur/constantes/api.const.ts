@@ -31,4 +31,6 @@ export const API_ENDPOINTS = {
   historiqueReparation: `${API_BASE_URL}/intelligence/repair-history/`,
   proceduresReparation: `${API_BASE_URL}/intelligence/repair-procedure-templates/`,
   predictionsReparation: `${API_BASE_URL}/intelligence/repair-predictions/`,
+  enrichissementsPanne: `${API_BASE_URL}/intelligence/failure-enrichments/`,
+  analysePanneIntelligence: `${API_BASE_URL}/intelligence/failure-enrichments/analyze/`,
 };

@@ -1,6 +1,10 @@
 import { Injectable, inject, signal } from '@angular/core';
+import { catchError, forkJoin, of } from 'rxjs';
 import {
   ActionReparation,
+  FailureEnrichment,
+  RepairHistory,
+  RepairPrediction,
   TicketReparation,
 } from '../../../coeur/modeles/action-reparation.model';
 import {
@@ -8,22 +12,34 @@ import {
   CreateRepairActionPayload,
   UpdateRepairTicketPayload,
 } from '../../../coeur/services-api/actions-reparation-api';
+import {
+  AnalyzeFailurePayload,
+  IntelligenceApi,
+} from '../../../coeur/services-api/intelligence-api';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ActionsReparationStore {
   private readonly actionsReparationApi = inject(ActionsReparationApi);
+  private readonly intelligenceApi = inject(IntelligenceApi);
 
   readonly ticket = signal<TicketReparation | null>(null);
   readonly actions = signal<ActionReparation[]>([]);
+  readonly enrichment = signal<FailureEnrichment | null>(null);
+  readonly prediction = signal<RepairPrediction | null>(null);
+  readonly similarHistories = signal<RepairHistory[]>([]);
   readonly chargementTicket = signal(false);
   readonly chargementActions = signal(false);
+  readonly chargementIntelligence = signal(false);
+  readonly analyseIntelligence = signal(false);
   readonly miseAJourTicket = signal(false);
   readonly soumissionAction = signal(false);
   readonly erreur = signal('');
   readonly erreurAction = signal('');
+  readonly erreurIntelligence = signal('');
   readonly succesAction = signal('');
+  readonly succesIntelligence = signal('');
 
   refresh(ticketId: number): void {
     this.erreur.set('');
@@ -38,6 +54,7 @@ export class ActionsReparationStore {
       next: (ticket) => {
         this.ticket.set(ticket);
         this.chargementTicket.set(false);
+        this.chargerIntelligence(ticket);
       },
       error: () => {
         this.erreur.set("Impossible de charger le detail du ticket de reparation.");
@@ -66,6 +83,107 @@ export class ActionsReparationStore {
           this.chargementActions.set(false);
         },
       });
+  }
+
+  chargerIntelligence(ticket: TicketReparation): void {
+    this.chargementIntelligence.set(true);
+    this.erreurIntelligence.set('');
+    this.succesIntelligence.set('');
+
+    forkJoin({
+      enrichments: this.intelligenceApi
+        .listerEnrichissements({
+          failure_case: ticket.failure_case,
+          page: 1,
+          page_size: 1,
+          ordering: '-enriched_at',
+        })
+        .pipe(catchError(() => of(null))),
+      predictions: this.intelligenceApi
+        .listerPredictions({
+          failure_case: ticket.failure_case,
+          repair_ticket: ticket.id,
+          page: 1,
+          page_size: 1,
+          ordering: '-predicted_at',
+        })
+        .pipe(catchError(() => of(null))),
+      histories: this.intelligenceApi
+        .listerHistorique({
+          internal_reference: ticket.internal_reference ?? undefined,
+          failure_type: ticket.failure_type ?? undefined,
+          page: 1,
+          page_size: 5,
+          ordering: '-created_at',
+        })
+        .pipe(catchError(() => of(null))),
+    }).subscribe({
+      next: ({ enrichments, predictions, histories }) => {
+        this.enrichment.set(enrichments?.items[0] ?? null);
+        this.prediction.set(predictions?.items[0] ?? null);
+        this.similarHistories.set(
+          (histories?.items ?? []).filter((history) => history.failure_case !== ticket.failure_case)
+        );
+
+        if (!enrichments || !predictions || !histories) {
+          this.erreurIntelligence.set(
+            "Une partie des donnees d'intelligence n'a pas pu etre chargee."
+          );
+        }
+
+        this.chargementIntelligence.set(false);
+      },
+      error: () => {
+        this.enrichment.set(null);
+        this.prediction.set(null);
+        this.similarHistories.set([]);
+        this.erreurIntelligence.set("Impossible de charger le bloc d'intelligence.");
+        this.chargementIntelligence.set(false);
+      },
+    });
+  }
+
+  analyserTicketIntelligence(payload: AnalyzeFailurePayload): void {
+    this.analyseIntelligence.set(true);
+    this.erreurIntelligence.set('');
+    this.succesIntelligence.set('');
+
+    this.intelligenceApi.analyserPanne(payload).subscribe({
+      next: ({ enrichment, prediction }) => {
+        this.enrichment.set(enrichment);
+        this.prediction.set(prediction);
+        this.analyseIntelligence.set(false);
+        this.succesIntelligence.set("L'analyse intelligente a ete actualisee.");
+
+        const ticket = this.ticket();
+        if (ticket) {
+          this.intelligenceApi
+            .listerHistorique({
+              internal_reference: ticket.internal_reference ?? undefined,
+              failure_type: ticket.failure_type ?? undefined,
+              page: 1,
+              page_size: 5,
+              ordering: '-created_at',
+            })
+            .subscribe({
+              next: ({ items }) => {
+                this.similarHistories.set(
+                  items.filter((history) => history.failure_case !== ticket.failure_case)
+                );
+              },
+              error: () => {
+                this.similarHistories.set([]);
+              },
+            });
+        }
+      },
+      error: (err) => {
+        this.analyseIntelligence.set(false);
+        this.erreurIntelligence.set(
+          this.extraireErreur(err, "Impossible de lancer l'analyse intelligente.")
+        );
+      },
+    });
   }
 
   enregistrerAction(payload: CreateRepairActionPayload, onSuccess?: () => void): void {
@@ -116,13 +234,20 @@ export class ActionsReparationStore {
   reinitialiserFeedbackAction(): void {
     this.erreurAction.set('');
     this.succesAction.set('');
+    this.erreurIntelligence.set('');
+    this.succesIntelligence.set('');
   }
 
   vider(): void {
     this.ticket.set(null);
     this.actions.set([]);
+    this.enrichment.set(null);
+    this.prediction.set(null);
+    this.similarHistories.set([]);
     this.chargementTicket.set(false);
     this.chargementActions.set(false);
+    this.chargementIntelligence.set(false);
+    this.analyseIntelligence.set(false);
     this.miseAJourTicket.set(false);
     this.soumissionAction.set(false);
     this.erreur.set('');
